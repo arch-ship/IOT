@@ -263,6 +263,14 @@ function goPage(name, el) {
   el?.classList.add('active');
   updateAll();
   if (name === 'sensors') renderSensorsPage();
+  // Stop live speed test when leaving sensors tab to save data
+  if (name !== 'sensors' && BloomSensors.netSpeedIsOn()) {
+    BloomSensors.stopNetSpeed();
+    const btn   = document.getElementById('btnNetSpeed');
+    const pulse = document.getElementById('netSpeedPulse');
+    if (btn)   { btn.textContent = 'Start'; btn.style.background = 'rgba(168,85,247,.12)'; }
+    if (pulse) pulse.style.display = 'none';
+  }
 }
 
 // ─────────────────────────────────────────
@@ -401,6 +409,105 @@ function renderHRLog() {
       <span style="font-size:11px;color:${col}">${zone}</span>
     </div>`;
   }).join('');
+}
+
+// ─────────────────────────────────────────
+// NETWORK SPEED MONITOR
+// ─────────────────────────────────────────
+// Callback fired by sensors.js every time a measurement completes
+window.onNetSpeedUpdate = (mbps, history) => {
+  updateNetSpeedUI(mbps, history);
+};
+
+async function toggleNetSpeed() {
+  const btn   = document.getElementById('btnNetSpeed');
+  const pulse = document.getElementById('netSpeedPulse');
+
+  if (BloomSensors.netSpeedIsOn()) {
+    BloomSensors.stopNetSpeed();
+    if (btn)   { btn.textContent = 'Start'; btn.style.background = 'rgba(168,85,247,.12)'; }
+    if (pulse) pulse.style.display = 'none';
+    txt('netSpeedStatus', 'Monitoring stopped — tap Start to resume');
+  } else {
+    if (btn)   { btn.textContent = 'Stop';  btn.style.background = 'rgba(255,107,157,.18)'; }
+    if (pulse) pulse.style.display = 'inline-block';
+    txt('netSpeedStatus', 'Connecting to test server…');
+    txt('netSpeedVal',    '…');
+    txt('netSpeedUnit',   'Mbps');
+    txt('netSpeedRating', '');
+    await BloomSensors.startNetSpeed();
+  }
+}
+
+function updateNetSpeedUI(mbps, history) {
+  // ── No result ───────────────────────────────────────────────
+  if (mbps === null) {
+    txt('netSpeedVal',    'ERR');
+    txt('netSpeedUnit',   '');
+    txt('netSpeedRating', '⚠️ Cannot reach test server');
+    txt('netSpeedStatus', 'Check your internet connection and try again');
+    return;
+  }
+
+  // ── Format display value ────────────────────────────────────
+  let valStr, unit;
+  if (mbps < 1) {
+    valStr = Math.round(mbps * 1000).toString();
+    unit   = 'Kbps';
+  } else if (mbps >= 100) {
+    valStr = Math.round(mbps).toString();
+    unit   = 'Mbps';
+  } else {
+    valStr = mbps.toFixed(1);
+    unit   = 'Mbps';
+  }
+
+  // ── Speed colour + rating ───────────────────────────────────
+  let color, rating;
+  if      (mbps < 1)  { color = 'var(--rose)';   rating = '🔴 Slow — streaming may buffer';   }
+  else if (mbps < 5)  { color = 'var(--amber)';  rating = '🟡 Moderate — fine for browsing';  }
+  else if (mbps < 20) { color = 'var(--gold)';   rating = '🟢 Good — handles HD streaming';   }
+  else if (mbps < 50) { color = 'var(--mint)';   rating = '⚡ Fast — excellent connection';    }
+  else                { color = 'var(--sky)';    rating = '🚀 Very Fast — 5G / Fibre quality'; }
+
+  const valEl = document.getElementById('netSpeedVal');
+  if (valEl) { valEl.textContent = valStr; valEl.style.color = color; }
+  txt('netSpeedUnit',   unit);
+  txt('netSpeedRating', rating);
+
+  // ── Navigator Connection API extras ────────────────────────
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn) {
+    txt('netConnType',  (conn.effectiveType || conn.type || 'unknown').toUpperCase());
+    txt('netRTT',       conn.rtt !== undefined ? conn.rtt + ' ms' : '—');
+    txt('netSaveData',  conn.saveData ? '🟡 ON' : '🟢 OFF');
+  } else {
+    txt('netConnType',  'N/A'); txt('netRTT', '—'); txt('netSaveData', '—');
+  }
+
+  // ── History bar chart ───────────────────────────────────────
+  const barsEl = document.getElementById('netSpeedBars');
+  if (barsEl && history.length > 0) {
+    const maxMbps = Math.max(...history.map(h => h.mbps), 0.001);
+    barsEl.innerHTML = history.map(h => {
+      const pct  = Math.max(6, Math.round((h.mbps / maxMbps) * 100));
+      let bc;
+      if      (h.mbps < 1)  bc = 'var(--rose)';
+      else if (h.mbps < 5)  bc = 'var(--amber)';
+      else if (h.mbps < 20) bc = 'var(--gold)';
+      else                   bc = 'var(--mint)';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="width:100%;height:44px;background:rgba(255,255,255,.05);border-radius:5px;display:flex;align-items:flex-end;overflow:hidden">
+          <div style="width:100%;height:${pct}%;background:${bc};border-radius:5px 5px 0 0;transition:height .45s ease;min-height:4px"></div>
+        </div>
+        <div style="font-size:8px;color:var(--tsoft);text-align:center;line-height:1.2">${h.label}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Status line ─────────────────────────────────────────────
+  const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  txt('netSpeedStatus', 'Last: ' + now + ' · Auto-refreshes every 5 s');
 }
 
 // ─────────────────────────────────────────
