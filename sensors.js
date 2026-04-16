@@ -486,6 +486,92 @@ const BloomSensors = (() => {
   function successBuzz()    { vibrate([100, 50, 100]); }
   function tapBuzz()        { vibrate([30]); }
 
+  // ── Network Speed Monitor ──────────────────────────────────
+  // Real-time download speed test using Cloudflare's speed test
+  // endpoint — fully CORS-enabled, works on ALL mobile browsers
+  // with zero setup. Falls back to navigator.connection estimate.
+  //
+  // HOW IT WORKS:
+  //   1. Downloads 50 KB from speed.cloudflare.com (CORS-open)
+  //   2. Measures exact bytes / time = real download Mbps
+  //   3. Repeats every 5 seconds while running
+  //   4. Falls back to navigator.connection.downlink if fetch fails
+  // ─────────────────────────────────────────────────────────
+
+  const NET_TEST_URL   = 'https://speed.cloudflare.com/__down?bytes=50000';
+  const NET_TEST_BYTES = 50000; // 50 KB per test — fast enough for quick result
+
+  const netState = {
+    on:        false,
+    testing:   false,
+    intervalId: null,
+    currentMbps: null,
+    history:   [],   // last 10 { mbps, label } entries
+  };
+
+  async function _doSpeedTest() {
+    if (netState.testing) return null;
+    netState.testing = true;
+    try {
+      const t0 = performance.now();
+      const resp = await fetch(NET_TEST_URL + '&_=' + Date.now(), {
+        cache: 'no-store',
+        mode:  'cors',
+      });
+      await resp.arrayBuffer();
+      const secs = (performance.now() - t0) / 1000;
+      netState.testing = false;
+      const mbps = (NET_TEST_BYTES * 8) / (secs * 1_000_000);
+      return Math.round(mbps * 100) / 100; // 2 decimal places
+    } catch (e) {
+      netState.testing = false;
+      // Fallback: navigator Network Information API estimate
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (conn && conn.downlink) return conn.downlink;
+      return null;
+    }
+  }
+
+  async function startNetSpeed() {
+    if (netState.on) return;
+    netState.on       = true;
+    netState.history  = [];
+
+    const tick = async () => {
+      const mbps = await _doSpeedTest();
+      if (mbps !== null) {
+        netState.currentMbps = mbps;
+        const label = mbps < 1
+          ? Math.round(mbps * 1000) + 'K'
+          : mbps.toFixed(1) + 'M';
+        netState.history.push({ mbps, label });
+        if (netState.history.length > 10) netState.history.shift();
+      }
+      if (typeof window.onNetSpeedUpdate === 'function') {
+        window.onNetSpeedUpdate(mbps, [...netState.history]);
+      }
+    };
+
+    await tick(); // first reading immediately
+    netState.intervalId = setInterval(tick, 5000);
+  }
+
+  function stopNetSpeed() {
+    if (netState.intervalId) clearInterval(netState.intervalId);
+    netState.on        = false;
+    netState.intervalId = null;
+    netState.testing   = false;
+  }
+
+  function getNetSpeedState() {
+    return {
+      on:          netState.on,
+      testing:     netState.testing,
+      currentMbps: netState.currentMbps,
+      history:     [...netState.history],
+    };
+  }
+
   // ── Network Info ───────────────────────────────────────────
   function getNetworkInfo() {
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -536,6 +622,11 @@ const BloomSensors = (() => {
     milestoneBuzz,
     successBuzz,
     tapBuzz,
+    // Network Speed Monitor
+    startNetSpeed,
+    stopNetSpeed,
+    getNetSpeedState,
+    netSpeedIsOn: () => netState.on,
     // Device info
     getNetworkInfo,
     getScreenInfo,
