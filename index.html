@@ -382,7 +382,69 @@
         <div style="font-size:11px;color:var(--tsoft);margin-top:8px">Requires AmbientLightSensor API. Available on some Android Chrome browsers.</div>
       </div>
 
-      <!-- Network -->
+      <!-- Network Speed Monitor -->
+      <div class="sensor-card" style="border-color:rgba(52,211,153,.22);background:linear-gradient(135deg,rgba(52,211,153,.07),transparent)">
+
+        <!-- Header row with live pulse + toggle -->
+        <div class="clabel" style="justify-content:space-between;margin-bottom:14px">
+          <span>📡 Real-Time Network Speed</span>
+          <div style="display:flex;align-items:center;gap:9px">
+            <div id="netSpeedPulse" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--mint);animation:pu 1.4s infinite"></div>
+            <button class="sbtn" id="btnNetSpeed" onclick="toggleNetSpeed()">Start</button>
+          </div>
+        </div>
+
+        <!-- Big speed number -->
+        <div style="text-align:center;padding:16px 0 12px">
+          <div id="netSpeedVal"
+               style="font-family:'Fraunces',serif;font-size:64px;font-weight:700;color:var(--mint);line-height:1;transition:color .4s">—</div>
+          <div id="netSpeedUnit"
+               style="font-size:13px;color:var(--tsoft);margin-top:5px;letter-spacing:2.5px;text-transform:uppercase">Mbps</div>
+          <div id="netSpeedRating"
+               style="font-size:13px;color:var(--tmid);margin-top:8px;min-height:18px"></div>
+        </div>
+
+        <!-- Connection info 3-col grid -->
+        <div class="sensor-grid" style="margin-bottom:16px">
+          <div class="sensor-metric">
+            <div class="sm-val" id="netConnType" style="color:var(--sky)">—</div>
+            <div class="sm-lbl">Connection</div>
+          </div>
+          <div class="sensor-metric">
+            <div class="sm-val" id="netRTT" style="color:var(--gold)">—</div>
+            <div class="sm-lbl">Ping (ms)</div>
+          </div>
+          <div class="sensor-metric">
+            <div class="sm-val" id="netSaveData" style="color:var(--violet)">—</div>
+            <div class="sm-lbl">Data Saver</div>
+          </div>
+        </div>
+
+        <!-- Speed history bar chart -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tsoft);margin-bottom:8px">Speed history (last 10 readings)</div>
+          <div id="netSpeedBars"
+               style="display:flex;align-items:flex-end;gap:5px;height:56px">
+            <!-- bars rendered by updateNetSpeedUI() in app.js -->
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:11px 13px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--tsoft);line-height:1.7">
+            Downloads <strong style="color:var(--mint)">50 KB from Cloudflare's speed server</strong> every 5 seconds to measure your real download speed. Works on every mobile browser — no app or setup needed. Auto-stops when you leave this tab to save data.
+          </div>
+        </div>
+
+        <!-- Status line -->
+        <div id="netSpeedStatus"
+             style="font-size:11px;color:var(--tsoft);text-align:center">
+          Tap Start to begin monitoring
+        </div>
+
+      </div>
+
+      <!-- Network & Device (existing basic info card) -->
       <div class="sensor-card" style="border-color:rgba(168,85,247,.15)">
         <div class="clabel">📶 Network & Device</div>
         <div class="sensor-grid">
