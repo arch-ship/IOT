@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0a14">
+  <title>Bloom — Wellness</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     BIOMETRIC LOCK SCREEN
+     (shown on app open if lock is enabled)
+════════════════════════════════════════ -->
+<div id="bioLock">
+  <div class="bio-icon">🔐</div>
+  <div class="bio-title">Bloom is Locked</div>
+  <div class="bio-sub">Welcome back, <strong id="bioLockName">Mama</strong> 🌸<br>Use your fingerprint or Face ID to unlock</div>
+  <button class="btn bv" style="width:220px;margin-top:8px" onclick="tryBiometricLock()">🔓 Unlock with Biometric</button>
+  <div style="font-size:11px;color:var(--tsoft);margin-top:14px">Works with fingerprint & Face ID</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ONBOARDING
+════════════════════════════════════════ -->
+<div id="onboard">
+  <div class="ob-flower">🌸</div>
+  <div class="ob-title">Welcome to Bloom</div>
+  <div class="ob-sub">Your personal wellness companion.<br>Let's set you up in seconds.</div>
+  <div class="ob-card">
+    <div class="ob-label">✦ What's your name?</div>
+    <input class="ob-input" id="obName" placeholder="Enter your name…" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+  <div class="ob-card">
+    <div class="ob-label">✦ Sensors Bloom will use</div>
+    <div class="ob-step-row">
+      <div class="ob-step">📱 <span>Accelerometer, 🔄 Gyroscope</span></div>
+      <div class="ob-step">📍 <span>GPS</span></div>
+      <div class="ob-step">💓 <span>Camera rPPG</span></div>
+      <div class="ob-step">🔐 <span>Fingerprint / Face ID</span></div>
+      <div class="ob-step">🔔 <span>Notifications</span></div>
+    </div>
+  </div>
+  <button class="btn bv bfull" style="margin-bottom:10px" onclick="startApp()">Let's Bloom! 🌸</button>
+  <button class="btn bg bfull" onclick="skipOnboard()">Skip setup</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div class="shell" id="mainApp" style="display:none">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hi">✦ YOUR WELLNESS</div>
+      <div class="hn">Hello, <em id="hdrName">Mama</em> 🌸</div>
+    </div>
+    <div class="hdr-r">
+      <div class="live-pill" id="livePill"><div class="live-pulse"></div>LIVE</div>
+      <div class="icon-btn" onclick="testNotif()">🔔<div class="notif-dot" id="ndot"></div></div>
+    </div>
+  </div>
+
+  <!-- NAV PILLS -->
+  <div class="nav">
+    <div class="pill active"  onclick="goPage('home',this)">🏠 Home</div>
+    <div class="pill"         onclick="goPage('steps',this)">👟 Steps</div>
+    <div class="pill"         onclick="goPage('water',this)">💧 Water</div>
+    <div class="pill"         onclick="goPage('diet',this)">🥗 Diet</div>
+    <div class="pill"         onclick="goPage('schedule',this)">🗓 Schedule</div>
+    <div class="pill"         onclick="goPage('sensors',this)">📡 Sensors</div>
+    <div class="pill"         onclick="goPage('progress',this)">📈 Progress</div>
+  </div>
+
+  <div class="pages">
+
+    <!-- ════════ HOME ════════ -->
+    <div class="page active" id="pg-home">
+      <div class="qcard">
+        <div class="qt" id="quoteEl">"Every step you take is a vote for the healthier version of you."</div>
+        <div class="qby">— your daily bloom ✦</div>
+      </div>
+      <div class="doccard">
+        <div class="docav">👩‍⚕️</div>
+        <div>
+          <div class="docname">Dr. Priya Sharma</div>
+          <div class="docq" id="tipEl">"Stay hydrated and keep moving today. I'm proud of you! 💜"</div>
+        </div>
+      </div>
+      <div class="sgrid">
+        <div class="mstat"><div class="msi">👟</div><div class="msv" id="hs-s">0</div><div class="msl">Steps</div></div>
+        <div class="mstat"><div class="msi">💧</div><div class="msv" id="hs-w">0ml</div><div class="msl">Water</div></div>
+        <div class="mstat"><div class="msi">🔥</div><div class="msv" id="hs-c">0</div><div class="msl">kcal in</div></div>
+        <div class="mstat"><div class="msi">⚡</div><div class="msv" id="hs-b">0</div><div class="msl">kcal out</div></div>
+      </div>
+      <div class="card">
+        <div class="clabel">🎯 Today's Goals</div>
+        <div class="pbrow">
+          <div class="pblabels"><span>👟 Steps</span><span id="pl-s">0/8,000</span></div>
+          <div class="pbtrack"><div class="pbfill" id="pb-s" style="width:0%;background:linear-gradient(90deg,var(--rose),var(--violet))"></div></div>
+        </div>
+        <div class="pbrow">
+          <div class="pblabels"><span>💧 Water</span><span id="pl-w">0/2,000ml</span></div>
+          <div class="pbtrack"><div class="pbfill" id="pb-w" style="width:0%;background:linear-gradient(90deg,var(--sky),#60e0ff)"></div></div>
+        </div>
+        <div class="pbrow">
+          <div class="pblabels"><span>🥗 Calories</span><span id="pl-c">0/1,500kcal</span></div>
+          <div class="pbtrack"><div class="pbfill" id="pb-c" style="width:0%;background:linear-gradient(90deg,var(--gold),var(--amber))"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="clabel">🔥 7-Day Streak</div>
+        <div class="srow" id="streakRow"></div>
+      </div>
+    </div>
+
+    <!-- ════════ STEPS ════════ -->
+    <div class="page" id="pg-steps">
+      <svg style="position:absolute;width:0;height:0">
+        <defs>
+          <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stop-color="#ff6b9d"/>
+            <stop offset="100%" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="step-hero">
+        <div class="hero-bg-ring"></div>
+        <div class="clabel" style="position:relative;z-index:1;justify-content:space-between">
+          <span>👟 Live Step Counter</span>
+          <span id="stepConfBadge" style="font-size:10px;color:var(--mint)">Conf: 0%</span>
+        </div>
+        <div class="ring-row">
+          <div class="ring-wrap">
+            <svg class="rsvg" viewBox="0 0 108 108">
+              <circle class="rbg"   cx="54" cy="54" r="45"/>
+              <circle class="rfill" id="sring" cx="54" cy="54" r="45"/>
+            </svg>
+            <div class="ring-inner">
+              <div class="rcount" id="rcnt">0</div>
+              <div class="runit">steps</div>
+            </div>
+          </div>
+          <div class="step-meta">
+            <div class="spct" id="spct">0%</div>
+            <div class="sgoal">of <span id="goalLbl">8,000</span> step goal</div>
+            <div class="smsg" id="smsg">Start moving — vehicle filter ON 🛡️</div>
+          </div>
+        </div>
+        <div class="sensor-bar">
+          <div class="sdot" id="sdot"></div>
+          <span id="stxt">Tap to start motion tracking</span>
+          <button class="sbtn" id="sbtn" onclick="toggleSensor()">Enable</button>
+        </div>
+      </div>
+
+      <!-- Step algorithm info -->
+      <div class="card" style="background:linear-gradient(135deg,rgba(52,211,153,.06),transparent);border-color:rgba(52,211,153,.15)">
+        <div class="clabel">🛡️ Vehicle Vibration Filter</div>
+        <div style="font-size:13px;color:var(--tmid);line-height:1.8">
+          Bloom now uses a <strong style="color:var(--mint)">dual-stage IIR filter</strong> that isolates the
+          <strong style="color:var(--violet)">0.5–5 Hz walking band</strong> — stripping both gravity and
+          high-frequency engine vibrations before peak detection.<br><br>
+          A <strong style="color:var(--rose)">cadence consistency check</strong> requires
+          <strong style="color:var(--gold)">5 consecutive rhythmic steps</strong> (σ &lt; 80ms) before counting starts —
+          car road bumps and sudden jolts are <strong style="color:var(--rose)">automatically rejected</strong>.
+          Gyroscope data adds an extra confidence boost for genuine walking motion.
+        </div>
+      </div>
+
+      <div class="sgrid">
+        <div class="mstat"><div class="msi">🔥</div><div class="msv" id="calBurned">0</div><div class="msl">kcal Burned</div></div>
+        <div class="mstat"><div class="msi">📏</div><div class="msv" id="distEl">0.0km</div><div class="msl">Est. Distance</div></div>
+      </div>
+      <div class="card">
+        <div class="clabel">🎯 Set Daily Goal</div>
+        <div class="frow">
+          <input class="fi" id="goalIn" placeholder="Step goal (default 8,000)" type="number" inputmode="numeric">
+          <button class="btn bv bsm" onclick="setGoal()">Set</button>
+        </div>
+        <button class="btn bg bfull bsm" onclick="resetSteps()">↩ Reset Today's Steps</button>
+      </div>
+    </div>
+
+    <!-- ════════ WATER ════════ -->
+    <div class="page" id="pg-water">
+      <div class="card">
+        <div class="clabel">💧 Hydration Tracker</div>
+        <div class="wrow">
+          <div class="warc">
+            <svg class="wsvg" viewBox="0 0 80 80">
+              <circle class="wbg"   cx="40" cy="40" r="35"/>
+              <circle class="wfill" id="warc" cx="40" cy="40" r="35"/>
+            </svg>
+            <div class="warc-inner"><div class="wml" id="wml">0</div><div class="wsub2">ml</div></div>
+          </div>
+          <div>
+            <div class="wbig" id="wbig">0 ml</div>
+            <div class="wgoal">Goal: 2,000 ml</div>
+            <div class="wpct" id="wpct">0% hydrated 💧</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-bottom:10px">Tap a glass to log 250ml ↓</div>
+        <div class="ggrid" id="ggrid"></div>
+        <div style="display:flex;gap:8px;margin-top:11px">
+          <button class="btn bg bsm" style="flex:1" onclick="resetWater()">Reset</button>
+          <button class="btn bsk bsm" style="flex:1" onclick="fillWater()">Complete 🎉</button>
+        </div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,rgba(56,189,248,.08),transparent);border-color:rgba(56,189,248,.13)">
+        <div class="clabel">⏰ Hydration Schedule</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+            <div><div style="font-size:14px;font-weight:500">🌅 Wake up</div><div style="font-size:11px;color:var(--tsoft)">500ml warm lemon water first thing</div></div>
+            <span class="badge bm">Priority</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+            <div><div style="font-size:14px;font-weight:500">🔔 Every 2 hours</div><div style="font-size:11px;color:var(--tsoft)">1 glass (250ml) — auto reminded</div></div>
+            <span class="badge bvi">Reminded</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+            <div><div style="font-size:14px;font-weight:500">🏃‍♀️ Before & after walk</div><div style="font-size:11px;color:var(--tsoft)">250ml each time</div></div>
+            <span class="badge bgo">Important</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ DIET ════════ -->
+    <div class="page" id="pg-diet">
+      <div class="cban">
+        <div class="cbox"><div class="cbv rose" id="dc-in">0</div><div class="cbl">Consumed</div></div>
+        <div class="cbox"><div class="cbv mint" id="dc-goal">1500</div><div class="cbl">Goal</div></div>
+        <div class="cbox"><div class="cbv gold" id="dc-rem">1500</div><div class="cbl">Remaining</div></div>
+      </div>
+      <div class="card">
+        <div class="clabel">🧬 Macros Today</div>
+        <div class="mbars">
+          <div class="mbc"><div class="mbw"><div class="mbf" id="mb-c" style="height:0%;background:var(--gold)"></div></div><div class="mbvv" id="mv-c">0g</div><div class="mbn">Carbs</div></div>
+          <div class="mbc"><div class="mbw"><div class="mbf" id="mb-p" style="height:0%;background:var(--rose)"></div></div><div class="mbvv" id="mv-p">0g</div><div class="mbn">Protein</div></div>
+          <div class="mbc"><div class="mbw"><div class="mbf" id="mb-f" style="height:0%;background:var(--mint)"></div></div><div class="mbvv" id="mv-f">0g</div><div class="mbn">Fat</div></div>
+          <div class="mbc"><div class="mbw"><div class="mbf" id="mb-fi" style="height:0%;background:var(--sky)"></div></div><div class="mbvv" id="mv-fi">0g</div><div class="mbn">Fiber</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="clabel">🍽️ Meal Log</div>
+        <div id="mealLog"></div>
+        <button class="btn br bfull" style="margin-top:11px" onclick="toggleMealForm()">+ Log a Meal</button>
+        <div class="aform" id="addMealForm">
+          <div class="frow">
+            <input class="fi" id="mn" placeholder="Meal name" style="flex:2">
+            <select class="fsel" id="me">
+              <option value="🥣">🥣 Breakfast</option>
+              <option value="🍽️">🍽️ Lunch</option>
+              <option value="🌙">🌙 Dinner</option>
+              <option value="🍎">🍎 Snack</option>
+              <option value="🥤">🥤 Drink</option>
+            </select>
+          </div>
+          <div class="frow">
+            <input class="fi" id="mc"    type="number" placeholder="Calories"  inputmode="numeric">
+            <input class="fi" id="mcarb" type="number" placeholder="Carbs g"   inputmode="numeric">
+          </div>
+          <div class="frow">
+            <input class="fi" id="mprot" type="number" placeholder="Protein g" inputmode="numeric">
+            <input class="fi" id="mfat"  type="number" placeholder="Fat g"     inputmode="numeric">
+          </div>
+          <div class="frow">
+            <input class="fi" id="mfib"  type="number" placeholder="Fiber g"   inputmode="numeric">
+          </div>
+          <button class="btn br bfull" onclick="addMeal()">Add to Log ✓</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="clabel" style="justify-content:space-between">
+          <span>👩‍⚕️ Doctor's Meal Plan</span>
+          <span style="font-size:10px;color:var(--violet);cursor:pointer" onclick="addPlanMeal()">+ Add Meal</span>
+        </div>
+        <div id="planList"></div>
+      </div>
+    </div>
+
+    <!-- ════════ SCHEDULE ════════ -->
+    <div class="page" id="pg-schedule">
+      <div class="card">
+        <div class="clabel" style="justify-content:space-between">
+          <span>🌸 Daily Wellness Timeline</span>
+          <span style="font-size:10px;color:var(--violet);cursor:pointer" onclick="addScheduleItem()">+ Add</span>
+        </div>
+        <div id="schedList"></div>
+      </div>
+      <div class="card">
+        <div class="clabel">🔔 Smart Reminders</div>
+        <div id="remList"></div>
+      </div>
+    </div>
+
+    <!-- ════════ SENSORS ════════ -->
+    <div class="page" id="pg-sensors">
+
+      <!-- GPS -->
+      <div class="sensor-card sensor-card-gps">
+        <div class="clabel">📍 GPS Route Tracking</div>
+        <div class="sensor-grid">
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--mint)" id="gps-km">—</div><div class="sm-lbl">Distance</div></div>
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--sky)"  id="gps-pace">—</div><div class="sm-lbl">Pace (min/km)</div></div>
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--gold)" id="gps-time">—</div><div class="sm-lbl">Duration</div></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bm bsm" style="flex:2" onclick="toggleGPS()"><span id="gpsBtnTxt">Start GPS</span></button>
+          <button class="btn bg bsm" style="flex:1" onclick="resetGPS()">Reset</button>
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-top:9px">📍 GPS gives accurate distance vs. estimated stride-based distance on Steps tab</div>
+      </div>
+
+      <!-- Heart Rate -->
+      <div class="sensor-card sensor-card-hr">
+        <div class="clabel">💓 Heart Rate Monitor (Camera rPPG)</div>
+        <div class="sensor-stat-row">
+          <div class="hr-ring-outer">
+            <div class="hr-ring-inner" id="hr-bpm">— BPM</div>
+          </div>
+          <div style="flex:1">
+            <div class="sensor-sub" id="hr-quality">Place finger over rear camera</div>
+            <div style="font-size:11px;color:var(--tsoft);margin-top:6px;line-height:1.5">
+              Hold your fingertip firmly over the rear camera lens. Keep still for 20 seconds. Torch turns on automatically.
+            </div>
+            <button class="btn br bsm" style="margin-top:10px;width:100%" onclick="toggleHR()">
+              <span id="hrBtnTxt">Start Measuring</span>
+            </button>
+          </div>
+        </div>
+        <div id="hrLog" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Step Confidence -->
+      <div class="sensor-card sensor-card-gyro">
+        <div class="clabel">🔄 Motion Sensor Quality</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:22px;font-weight:700;font-family:'Fraunces',serif" id="stepConf">0%</div>
+            <div style="font-size:11px;color:var(--tsoft)">Walking confidence score</div>
+          </div>
+          <div style="text-align:right;font-size:12px;color:var(--tmid)">
+            High = genuine walking<br>Low = vehicle / stationary
+          </div>
+        </div>
+        <div class="conf-bar">
+          <div class="conf-fill" id="confFill" style="width:0%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-top:8px;line-height:1.6">
+          Uses dual-stage IIR filter (HP + LP) + cadence σ analysis + gyroscope fusion. Requires 5 rhythmic steps before counting.
+        </div>
+      </div>
+
+      <!-- Battery -->
+      <div class="sensor-card sensor-card-bat">
+        <div class="clabel">🔋 Battery Status</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="font-family:'Fraunces',serif;font-size:40px;font-weight:700;color:var(--gold)" id="bat-level">—</div>
+          <div>
+            <div style="font-size:14px;font-weight:600" id="bat-status">Checking…</div>
+            <div style="font-size:12px;color:var(--tmid);margin-top:4px" id="bat-advice">—</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-top:8px">💡 Tip: Keep battery above 20% during GPS walks for best tracking</div>
+      </div>
+
+      <!-- Ambient Light -->
+      <div class="sensor-card sensor-card-light">
+        <div class="clabel">☀️ Ambient Light</div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="font-family:'Fraunces',serif;font-size:36px;font-weight:700;color:var(--amber)" id="light-val">—</div>
+          <div style="font-size:13px;color:var(--tmid);line-height:1.6" id="light-advice">Checking ambient light sensor…</div>
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-top:8px">Requires AmbientLightSensor API. Available on some Android Chrome browsers.</div>
+      </div>
+
+      <!-- Network Speed Monitor -->
+      <div class="sensor-card" style="border-color:rgba(52,211,153,.22);background:linear-gradient(135deg,rgba(52,211,153,.07),transparent)">
+
+        <!-- Header row with live pulse + toggle -->
+        <div class="clabel" style="justify-content:space-between;margin-bottom:14px">
+          <span>📡 Real-Time Network Speed</span>
+          <div style="display:flex;align-items:center;gap:9px">
+            <div id="netSpeedPulse" style="display:none;width:8px;height:8px;border-radius:50%;background:var(--mint);animation:pu 1.4s infinite"></div>
+            <button class="sbtn" id="btnNetSpeed" onclick="toggleNetSpeed()">Start</button>
+          </div>
+        </div>
+
+        <!-- Big speed number -->
+        <div style="text-align:center;padding:16px 0 12px">
+          <div id="netSpeedVal"
+               style="font-family:'Fraunces',serif;font-size:64px;font-weight:700;color:var(--mint);line-height:1;transition:color .4s">—</div>
+          <div id="netSpeedUnit"
+               style="font-size:13px;color:var(--tsoft);margin-top:5px;letter-spacing:2.5px;text-transform:uppercase">Mbps</div>
+          <div id="netSpeedRating"
+               style="font-size:13px;color:var(--tmid);margin-top:8px;min-height:18px"></div>
+        </div>
+
+        <!-- Connection info 3-col grid -->
+        <div class="sensor-grid" style="margin-bottom:16px">
+          <div class="sensor-metric">
+            <div class="sm-val" id="netConnType" style="color:var(--sky)">—</div>
+            <div class="sm-lbl">Connection</div>
+          </div>
+          <div class="sensor-metric">
+            <div class="sm-val" id="netRTT" style="color:var(--gold)">—</div>
+            <div class="sm-lbl">Ping (ms)</div>
+          </div>
+          <div class="sensor-metric">
+            <div class="sm-val" id="netSaveData" style="color:var(--violet)">—</div>
+            <div class="sm-lbl">Data Saver</div>
+          </div>
+        </div>
+
+        <!-- Speed history bar chart -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--tsoft);margin-bottom:8px">Speed history (last 10 readings)</div>
+          <div id="netSpeedBars"
+               style="display:flex;align-items:flex-end;gap:5px;height:56px">
+            <!-- bars rendered by updateNetSpeedUI() in app.js -->
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div style="background:rgba(255,255,255,.03);border-radius:12px;padding:11px 13px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--tsoft);line-height:1.7">
+            Downloads <strong style="color:var(--mint)">50 KB from Cloudflare's speed server</strong> every 5 seconds to measure your real download speed. Works on every mobile browser — no app or setup needed. Auto-stops when you leave this tab to save data.
+          </div>
+        </div>
+
+        <!-- Status line -->
+        <div id="netSpeedStatus"
+             style="font-size:11px;color:var(--tsoft);text-align:center">
+          Tap Start to begin monitoring
+        </div>
+
+      </div>
+
+      <!-- Network & Device (existing basic info card) -->
+      <div class="sensor-card" style="border-color:rgba(168,85,247,.15)">
+        <div class="clabel">📶 Network & Device</div>
+        <div class="sensor-grid">
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--violet)" id="net-type">—</div><div class="sm-lbl">Network</div></div>
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--tmid)"   id="net-save">—</div><div class="sm-lbl">Data Mode</div></div>
+          <div class="sensor-metric"><div class="sm-val" style="color:var(--sky)" id="bioDevice">—</div><div class="sm-lbl">Device</div></div>
+        </div>
+      </div>
+
+      <!-- Biometric Security -->
+      <div class="sensor-card sensor-card-bio">
+        <div class="clabel" style="justify-content:space-between">
+          <span>🔐 Biometric App Lock</span>
+          <div class="tog" id="bioToggle" onclick="toggleBiometric()"><div class="tok"></div></div>
+        </div>
+        <div style="font-size:13px;color:var(--tmid);line-height:1.7;margin-bottom:12px">
+          Lock Bloom with your <strong style="color:var(--violet)">fingerprint or Face ID</strong>.
+          Uses the Web Authentication API (WebAuthn) — your biometric never leaves your device.
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">
+            🔓
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600" id="bioStatus">No lock enabled</div>
+            <div style="font-size:11px;color:var(--tsoft);margin-top:2px">Tap the toggle to enable biometric lock</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px;margin-top:12px">
+          <div style="font-size:11px;color:var(--tsoft);line-height:1.6">
+            ✅ <strong style="color:var(--mint)">Android Chrome</strong> — Fingerprint scanner<br>
+            ✅ <strong style="color:var(--sky)">iOS Safari 14+</strong> — Touch ID / Face ID<br>
+            ✅ <strong style="color:var(--gold)">Works in normal browser mode</strong> — no desktop mode needed<br>
+            ✅ Biometric data stays on device, never sent anywhere
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /pg-sensors -->
+
+    <!-- ════════ PROGRESS ════════ -->
+    <div class="page" id="pg-progress">
+      <div class="card">
+        <div class="clabel">⚖️ Weight Tracker</div>
+        <div class="frow">
+          <input class="fi" id="wIn" type="number" placeholder="Today's weight (kg)" step="0.1" inputmode="decimal">
+          <button class="btn bv bsm" onclick="logWeight()">Log</button>
+        </div>
+        <div id="wList"></div>
+      </div>
+      <div class="card">
+        <div class="clabel">📊 BMI Calculator</div>
+        <div class="frow">
+          <input class="fi" id="bW" type="number" placeholder="Weight (kg)" step="0.1" inputmode="decimal">
+          <input class="fi" id="bH" type="number" placeholder="Height (cm)" inputmode="numeric">
+        </div>
+        <button class="btn bv bfull" style="margin-bottom:13px" onclick="calcBMI()">Calculate BMI</button>
+        <div id="bmiOut" style="display:none">
+          <div style="text-align:center;margin-bottom:13px">
+            <div style="font-family:'Fraunces',serif;font-size:50px;line-height:1" id="bmiVal">–</div>
+            <div id="bmiCat" class="badge" style="margin:6px auto 0;display:inline-block">–</div>
+          </div>
+          <div class="bmibar">
+            <div class="bmiseg" style="background:#38bdf8;flex:1.5"></div>
+            <div class="bmiseg" style="background:#34d399;flex:1.5"></div>
+            <div class="bmiseg" style="background:#fbbf24;flex:1.5"></div>
+            <div class="bmiseg" style="background:#f97316;flex:1"></div>
+            <div class="bmiseg" style="background:#ef4444;flex:1"></div>
+          </div>
+          <div class="bmilab"><span>&lt;18.5</span><span>18.5–25</span><span>25–30</span><span>≥30</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="clabel">🏆 Achievements</div>
+        <div id="achList"></div>
+      </div>
+      <div class="card" style="background:linear-gradient(135deg,rgba(108,40,160,.18),rgba(20,8,40,.4));border-color:rgba(168,85,247,.14)">
+        <div class="clabel">💌 Message from Dr. Priya</div>
+        <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;line-height:1.7;color:var(--tmid)">
+          "Every small step matters. Consistency beats perfection. Log your meals, drink your water, and trust the process. I'm so proud of your journey. Keep blooming! 🌸"
+        </div>
+        <div style="font-size:11px;color:var(--tsoft);margin-top:9px">— Dr. Priya Sharma, Dietitian</div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════════
+     EDIT MODAL
+════════════════════════════════════════ -->
+<div class="modal-backdrop" id="editModal" onclick="closeModal(event)">
+  <div class="modal" id="editModalInner">
+    <div class="modal-title">
+      <span id="modalTitle">Edit</span>
+      <span class="modal-close" onclick="closeModalDirect()">✕</span>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     SCRIPTS (order matters)
+════════════════════════════════════════ -->
+<script src="auth.js"></script>
+<script src="sensors.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
