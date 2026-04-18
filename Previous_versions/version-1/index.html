@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0a14">
+  <title>Bloom — Wellness</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0a14;
+      --s1: #160d26;
+      --s2: #1e1232;
+      --card: #231642;
+      --card2: #2a1a4a;
+      --rose: #ff6b9d;
+      --rose2: #c4507a;
+      --violet: #a855f7;
+      --violet2: #7c3aed;
+      --mint: #34d399;
+      --sky: #38bdf8;
+      --gold: #fbbf24;
+      --amber: #f97316;
+      --text: #f0e6ff;
+      --tmid: #b89fd4;
+      --tsoft: #7a6896;
+      --gr: rgba(255, 107, 157, .22);
+      --gv: rgba(168, 85, 247, .22);
+      --gm: rgba(52, 211, 153, .18);
+      --r: 18px;
+      --st: env(safe-area-inset-top, 0px);
+      --sb: env(safe-area-inset-bottom, 0px);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      width: 100%
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      user-select: none;
+      -webkit-user-select: none
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 50% at 15% 5%, rgba(168, 85, 247, .15), transparent 55%), radial-gradient(ellipse 60% 45% at 85% 95%, rgba(255, 107, 157, .12), transparent 55%), radial-gradient(ellipse 40% 35% at 50% 50%, rgba(56, 189, 248, .06), transparent 65%);
+      pointer-events: none;
+      z-index: 0
+    }
+
+    /* ── ONBOARDING ── */
+    #onboard {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+      gap: 0
+    }
+
+    #onboard.gone {
+      display: none
+    }
+
+    .ob-flower {
+      font-size: 72px;
+      margin-bottom: 20px;
+      animation: floatY 3s ease-in-out infinite
+    }
+
+    @keyframes floatY {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-10px)
+      }
+    }
+
+    .ob-title {
+      font-family: 'Fraunces', serif;
+      font-size: 34px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--rose), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px
+    }
+
+    .ob-sub {
+      font-size: 14px;
+      color: var(--tmid);
+      line-height: 1.7;
+      margin-bottom: 32px
+    }
+
+    .ob-card {
+      background: var(--s2);
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: var(--r);
+      padding: 24px;
+      width: 100%;
+      margin-bottom: 16px
+    }
+
+    .ob-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--tsoft);
+      margin-bottom: 10px;
+      text-align: left
+    }
+
+    .ob-input {
+      width: 100%;
+      padding: 14px 18px;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 18px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      text-align: center;
+      transition: border-color .2s
+    }
+
+    .ob-input:focus {
+      border-color: var(--violet)
+    }
+
+    .ob-input::placeholder {
+      color: var(--tsoft)
+    }
+
+    .ob-step-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      margin-top: 4px
+    }
+
+    .ob-step {
+      font-size: 13px;
+      color: var(--tmid);
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .ob-step span {
+      color: var(--violet);
+      font-weight: 600
+    }
+
+    /* ── SHELL ── */
+    .shell {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: var(--st);
+      padding-bottom: var(--sb)
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      padding: 16px 20px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0
+    }
+
+    .hdr-l .hi {
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--tsoft)
+    }
+
+    .hdr-l .hn {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2
+    }
+
+    .hn em {
+      color: var(--rose);
+      font-style: italic
+    }
+
+    .hdr-r {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative
+    }
+
+    .icon-btn:active {
+      transform: scale(.9)
+    }
+
+    .notif-dot {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      width: 8px;
+      height: 8px;
+      background: var(--rose);
+      border-radius: 50%;
+      border: 1.5px solid var(--bg);
+      display: none
+    }
+
+    .notif-dot.on {
+      display: block
+    }
+
+    .live-pill {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: rgba(52, 211, 153, .1);
+      border: 1px solid rgba(52, 211, 153, .2);
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--mint);
+      letter-spacing: 1px;
+      text-transform: uppercase
+    }
+
+    .live-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--mint);
+      animation: pu 1.4s infinite
+    }
+
+    @keyframes pu {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .6;
+        transform: scale(1.4)
+      }
+    }
+
+    /* ── NAV ── */
+    .nav {
+      padding: 6px 20px 10px;
+      overflow-x: auto;
+      display: flex;
+      gap: 7px;
+      flex-shrink: 0;
+      scrollbar-width: none
+    }
+
+    .nav::-webkit-scrollbar {
+      display: none
+    }
+
+    .pill {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      border: 1.5px solid rgba(255, 255, 255, .07);
+      background: var(--card);
+      color: var(--tmid);
+      cursor: pointer;
+      transition: all .22s
+    }
+
+    .pill.active {
+      background: var(--violet);
+      color: #fff;
+      border-color: var(--violet);
+      box-shadow: 0 0 22px var(--gv)
+    }
+
+    .pill:active {
+      transform: scale(.94)
+    }
+
+    /* ── PAGES ── */
+    .pages {
+      flex: 1;
+      overflow: hidden;
+      position: relative
+    }
+
+    .page {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px 18px 28px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none
+    }
+
+    .page::-webkit-scrollbar {
+      display: none
+    }
+
+    .page.active {
+      opacity: 1;
+      pointer-events: auto
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--r);
+      padding: 18px;
+      margin-bottom: 13px;
+      border: 1px solid rgba(255, 255, 255, .05);
+      position: relative;
+      overflow: hidden
+    }
+
+    .clabel {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--tsoft);
+      margin-bottom: 13px;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    /* ── STEP HERO ── */
+    .step-hero {
+      background: linear-gradient(145deg, #1b0d35, #2c1558);
+      border-radius: var(--r);
+      padding: 20px 18px 16px;
+      margin-bottom: 13px;
+      border: 1px solid rgba(168, 85, 247, .18);
+      position: relative;
+      overflow: hidden
+    }
+
+    .hero-bg-ring {
+      position: absolute;
+      top: -60%;
+      left: -30%;
+      width: 160%;
+      height: 220%;
+      background: conic-gradient(from 180deg at 50% 50%, transparent 60%, rgba(168, 85, 247, .06) 100%);
+      animation: spin 25s linear infinite;
+      pointer-events: none
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .ring-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      position: relative;
+      z-index: 1
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 128px;
+      height: 128px;
+      flex-shrink: 0
+    }
+
+    .rsvg {
+      width: 128px;
+      height: 128px;
+      transform: rotate(-90deg)
+    }
+
+    .rbg {
+      fill: none;
+      stroke: rgba(255, 255, 255, .06);
+      stroke-width: 12
+    }
+
+    .rfill {
+      fill: none;
+      stroke: url(#rg);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 334;
+      stroke-dashoffset: 334;
+      transition: stroke-dashoffset .9s cubic-bezier(.4, 0, .2, 1);
+      filter: drop-shadow(0 0 10px rgba(255, 107, 157, .5))
+    }
+
+    .ring-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center
+    }
+
+    .rcount {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      transition: all .2s
+    }
+
+    .runit {
+      font-size: 10px;
+      color: var(--tsoft);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 2px
+    }
+
+    .step-meta {
+      flex: 1
+    }
+
+    .spct {
+      font-family: 'Fraunces', serif;
+      font-size: 44px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--rose), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1
+    }
+
+    .sgoal {
+      font-size: 12px;
+      color: var(--tsoft);
+      margin: 3px 0 8px
+    }
+
+    .smsg {
+      font-size: 13px;
+      color: var(--tmid);
+      line-height: 1.5
+    }
+
+    .sensor-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 13px;
+      padding: 10px 13px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--tmid);
+      position: relative;
+      z-index: 1
+    }
+
+    .sdot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--tsoft);
+      flex-shrink: 0;
+      transition: background .3s
+    }
+
+    .sdot.active {
+      background: var(--mint);
+      box-shadow: 0 0 7px var(--gm);
+      animation: pu 2s infinite
+    }
+
+    .sdot.denied {
+      background: var(--rose)
+    }
+
+    .sbtn {
+      margin-left: auto;
+      padding: 5px 13px;
+      border-radius: 99px;
+      border: 1px solid rgba(168, 85, 247, .4);
+      background: rgba(168, 85, 247, .12);
+      color: var(--violet);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s;
+      white-space: nowrap
+    }
+
+    .sbtn:active {
+      transform: scale(.93)
+    }
+
+    /* ── STATS GRID ── */
+    .sgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 13px
+    }
+
+    .mstat {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, .05);
+      text-align: center
+    }
+
+    .msi {
+      font-size: 26px;
+      margin-bottom: 6px
+    }
+
+    .msv {
+      font-family: 'Fraunces', serif;
+      font-size: 23px;
+      line-height: 1
+    }
+
+    .msl {
+      font-size: 10px;
+      color: var(--tsoft);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 3px
+    }
+
+    /* ── WATER ── */
+    .wrow {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px
+    }
+
+    .warc {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0
+    }
+
+    .wsvg {
+      width: 88px;
+      height: 88px;
+      transform: rotate(-90deg)
+    }
+
+    .wbg {
+      fill: none;
+      stroke: rgba(56, 189, 248, .1);
+      stroke-width: 10
+    }
+
+    .wfill {
+      fill: none;
+      stroke: var(--sky);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      transition: stroke-dashoffset .6s ease;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, .35))
+    }
+
+    .warc-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center
+    }
+
+    .wml {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--sky)
+    }
+
+    .wsub2 {
+      font-size: 9px;
+      color: var(--tsoft);
+      text-transform: uppercase;
+      letter-spacing: 1px
+    }
+
+    .wbig {
+      font-family: 'Fraunces', serif;
+      font-size: 36px;
+      color: var(--sky);
+      line-height: 1
+    }
+
+    .wgoal {
+      font-size: 12px;
+      color: var(--tsoft);
+      margin-top: 2px
+    }
+
+    .wpct {
+      font-size: 13px;
+      color: var(--tmid);
+      margin-top: 4px
+    }
+
+    .ggrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      margin-top: 4px
+    }
+
+    .gbtn {
+      aspect-ratio: 1;
+      border-radius: 13px;
+      border: 1.5px solid rgba(56, 189, 248, .13);
+      background: rgba(56, 189, 248, .05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .3s cubic-bezier(.4, 0, .2, 1);
+      font-size: 22px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .gbtn.filled {
+      background: rgba(56, 189, 248, .18);
+      border-color: var(--sky);
+      box-shadow: 0 0 14px rgba(56, 189, 248, .18)
+    }
+
+    .gbtn:active {
+      transform: scale(.88)
+    }
+
+    .gfill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to top, rgba(56, 189, 248, .28), transparent);
+      height: 0%;
+      transition: height .5s ease
+    }
+
+    .gbtn.filled .gfill {
+      height: 100%
+    }
+
+    .gnum {
+      font-size: 9px;
+      color: var(--tsoft);
+      position: relative;
+      z-index: 1;
+      margin-top: 2px
+    }
+
+    /* ── CALORIES BANNER ── */
+    .cban {
+      background: linear-gradient(135deg, #280a3a, #1a0d2e);
+      border-radius: var(--r);
+      padding: 16px;
+      margin-bottom: 13px;
+      display: flex;
+      border: 1px solid rgba(255, 107, 157, .13)
+    }
+
+    .cbox {
+      flex: 1;
+      text-align: center
+    }
+
+    .cbox+.cbox {
+      border-left: 1px solid rgba(255, 255, 255, .07)
+    }
+
+    .cbv {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      line-height: 1
+    }
+
+    .cbv.rose {
+      color: var(--rose)
+    }
+
+    .cbv.mint {
+      color: var(--mint)
+    }
+
+    .cbv.gold {
+      color: var(--gold)
+    }
+
+    .cbl {
+      font-size: 9px;
+      color: var(--tsoft);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px
+    }
+
+    /* ── MEALS ── */
+    .meal-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .meal-item:last-child {
+      border-bottom: none
+    }
+
+    .memi {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+      flex-shrink: 0
+    }
+
+    .minfo {
+      flex: 1;
+      min-width: 0
+    }
+
+    .mname {
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .mtime {
+      font-size: 11px;
+      color: var(--tsoft);
+      margin-top: 1px
+    }
+
+    .mcal {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--rose)
+    }
+
+    .delbtn {
+      background: none;
+      border: none;
+      color: var(--tsoft);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 3px;
+      line-height: 1;
+      transition: color .2s
+    }
+
+    .delbtn:hover {
+      color: var(--rose)
+    }
+
+    /* ── DOCTOR PLAN EDITOR ── */
+    .plan-item {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      padding: 12px;
+      background: rgba(255, 255, 255, .03);
+      border-radius: 13px;
+      margin-bottom: 8px;
+      position: relative
+    }
+
+    .plan-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      padding-top: 2px
+    }
+
+    .plan-body {
+      flex: 1;
+      min-width: 0
+    }
+
+    .plan-meal {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 3px
+    }
+
+    .plan-name {
+      font-size: 14px;
+      font-weight: 500
+    }
+
+    .plan-desc {
+      font-size: 12px;
+      color: var(--tmid);
+      margin-top: 2px
+    }
+
+    .plan-kcal {
+      font-size: 11px;
+      color: var(--tsoft);
+      margin-top: 2px
+    }
+
+    .plan-edit-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(168, 85, 247, .12);
+      border: 1px solid rgba(168, 85, 247, .25);
+      color: var(--violet);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s
+    }
+
+    .plan-edit-btn:active {
+      transform: scale(.93)
+    }
+
+    /* ── PLAN EDIT MODAL ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      z-index: 500;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto
+    }
+
+    .modal {
+      background: var(--s2);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px calc(24px + var(--sb));
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform .35s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    .modal-backdrop.open .modal {
+      transform: translateY(0)
+    }
+
+    .modal-title {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .modal-close {
+      font-size: 22px;
+      cursor: pointer;
+      color: var(--tsoft);
+      transition: color .2s
+    }
+
+    .modal-close:hover {
+      color: var(--text)
+    }
+
+    .modal-label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--tsoft);
+      margin-bottom: 7px
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color .2s
+    }
+
+    .modal-input:focus {
+      border-color: var(--violet)
+    }
+
+    .modal-input::placeholder {
+      color: var(--tsoft)
+    }
+
+    .modal-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      margin-bottom: 14px;
+      resize: none;
+      min-height: 80px;
+      transition: border-color .2s
+    }
+
+    .modal-textarea:focus {
+      border-color: var(--violet)
+    }
+
+    /* ── SCHEDULE ── */
+    .sched-item {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+      position: relative
+    }
+
+    .sched-item:last-child {
+      border-bottom: none
+    }
+
+    .sched-item.done {
+      opacity: .45
+    }
+
+    .stcol {
+      min-width: 56px
+    }
+
+    .stime {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--tsoft);
+      text-transform: uppercase;
+      letter-spacing: .5px
+    }
+
+    .sdotc {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 3px
+    }
+
+    .sbody {
+      flex: 1;
+      min-width: 0
+    }
+
+    .stitle {
+      font-size: 14px;
+      font-weight: 500
+    }
+
+    .ssub {
+      font-size: 11px;
+      color: var(--tsoft);
+      margin-top: 2px;
+      line-height: 1.4
+    }
+
+    .scheck {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, .12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all .3s;
+      background: transparent
+    }
+
+    .scheck.done {
+      background: var(--mint);
+      border-color: var(--mint);
+      color: #0a2a18
+    }
+
+    .sedit-btn {
+      background: rgba(168, 85, 247, .1);
+      border: 1px solid rgba(168, 85, 247, .2);
+      color: var(--violet);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s;
+      flex-shrink: 0;
+      margin-top: 1px
+    }
+
+    .sedit-btn:active {
+      transform: scale(.92)
+    }
+
+    /* ── PROGRESS ── */
+    .pbrow {
+      margin-bottom: 13px
+    }
+
+    .pblabels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--tsoft);
+      margin-bottom: 6px
+    }
+
+    .pbtrack {
+      height: 8px;
+      background: rgba(255, 255, 255, .06);
+      border-radius: 99px;
+      overflow: hidden
+    }
+
+    .pbfill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .9s cubic-bezier(.4, 0, .2, 1)
+    }
+
+    /* ── WEIGHT ── */
+    .we {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .we:last-child {
+      border-bottom: none
+    }
+
+    .wed {
+      font-size: 12px;
+      color: var(--tsoft)
+    }
+
+    .wev {
+      font-size: 16px;
+      font-weight: 600
+    }
+
+    .wedi {
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .wedi.down {
+      color: var(--mint)
+    }
+
+    .wedi.up {
+      color: var(--rose)
+    }
+
+    /* ── BMI ── */
+    .bmibar {
+      display: flex;
+      gap: 3px;
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 12px 0 5px
+    }
+
+    .bmiseg {
+      flex: 1;
+      border-radius: 3px
+    }
+
+    .bmilab {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--tsoft)
+    }
+
+    /* ── ACHIEVEMENTS ── */
+    .ach {
+      display: flex;
+      gap: 11px;
+      align-items: center;
+      padding: 11px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .05);
+      margin-bottom: 8px;
+      transition: all .3s
+    }
+
+    .ach.earned {
+      background: rgba(52, 211, 153, .07);
+      border-color: rgba(52, 211, 153, .13)
+    }
+
+    .achi {
+      font-size: 28px
+    }
+
+    .acht {
+      font-size: 14px;
+      font-weight: 600
+    }
+
+    .achd {
+      font-size: 11px;
+      color: var(--tsoft);
+      margin-top: 2px
+    }
+
+    /* ── STREAK ── */
+    .srow {
+      display: flex;
+      gap: 7px
+    }
+
+    .sd {
+      flex: 1;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      gap: 3px
+    }
+
+    .sd .dl {
+      font-size: 9px;
+      color: var(--tsoft);
+      text-transform: uppercase
+    }
+
+    .sd.done {
+      background: rgba(52, 211, 153, .14);
+      color: var(--mint)
+    }
+
+    .sd.done .dl {
+      color: rgba(52, 211, 153, .5)
+    }
+
+    .sd.today {
+      background: rgba(168, 85, 247, .18);
+      color: var(--violet);
+      box-shadow: 0 0 0 1.5px var(--violet)
+    }
+
+    .sd.today .dl {
+      color: rgba(168, 85, 247, .6)
+    }
+
+    .sd.empty {
+      background: rgba(255, 255, 255, .04);
+      color: var(--tsoft)
+    }
+
+    /* ── QUOTE ── */
+    .qcard {
+      background: linear-gradient(135deg, rgba(255, 107, 157, .13), rgba(168, 85, 247, .1));
+      border: 1px solid rgba(255, 107, 157, .18);
+      border-radius: var(--r);
+      padding: 18px;
+      margin-bottom: 13px;
+      text-align: center
+    }
+
+    .qt {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      font-style: italic;
+      line-height: 1.55;
+      margin-bottom: 7px
+    }
+
+    .qby {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--tsoft)
+    }
+
+    /* ── DOCTOR CARD ── */
+    .doccard {
+      background: linear-gradient(135deg, rgba(108, 40, 160, .28), rgba(40, 15, 80, .35));
+      border: 1px solid rgba(168, 85, 247, .18);
+      border-radius: var(--r);
+      padding: 16px;
+      margin-bottom: 13px;
+      display: flex;
+      gap: 13px;
+      align-items: center
+    }
+
+    .docav {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(168, 85, 247, .18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0
+    }
+
+    .docname {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 3px
+    }
+
+    .docq {
+      font-size: 12px;
+      color: var(--tmid);
+      line-height: 1.5;
+      font-style: italic
+    }
+
+    /* ── REMINDERS ── */
+    .ri {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04)
+    }
+
+    .ri:last-child {
+      border-bottom: none
+    }
+
+    .rit {
+      font-size: 14px;
+      font-weight: 500
+    }
+
+    .rim {
+      font-size: 11px;
+      color: var(--tsoft);
+      margin-top: 2px
+    }
+
+    /* ── TOGGLE ── */
+    .tog {
+      width: 44px;
+      height: 25px;
+      background: rgba(255, 255, 255, .08);
+      border-radius: 13px;
+      position: relative;
+      cursor: pointer;
+      transition: background .3s;
+      flex-shrink: 0
+    }
+
+    .tog.on {
+      background: var(--mint)
+    }
+
+    .tok {
+      width: 19px;
+      height: 19px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, .3)
+    }
+
+    .tog.on .tok {
+      transform: translateX(19px)
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s
+    }
+
+    .btn:active {
+      transform: scale(.95)
+    }
+
+    .bv {
+      background: linear-gradient(135deg, var(--violet), var(--violet2));
+      color: #fff;
+      box-shadow: 0 4px 18px var(--gv)
+    }
+
+    .br {
+      background: linear-gradient(135deg, var(--rose), var(--rose2));
+      color: #fff;
+      box-shadow: 0 4px 18px var(--gr)
+    }
+
+    .bg {
+      background: rgba(255, 255, 255, .06);
+      color: var(--tmid);
+      border: 1px solid rgba(255, 255, 255, .08)
+    }
+
+    .bsm {
+      padding: 8px 15px;
+      font-size: 12px;
+      border-radius: 10px
+    }
+
+    .bfull {
+      width: 100%
+    }
+
+    /* ── FORM INPUTS ── */
+    .fi {
+      flex: 1;
+      padding: 11px 13px;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .08);
+      border-radius: 11px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      -webkit-appearance: none;
+      transition: border-color .2s
+    }
+
+    .fi:focus {
+      border-color: var(--violet)
+    }
+
+    .fi::placeholder {
+      color: var(--tsoft)
+    }
+
+    .fsel {
+      padding: 11px 13px;
+      background: rgba(255, 255, 255, .05);
+      border: 1.5px solid rgba(255, 255, 255, .08);
+      border-radius: 11px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      cursor: pointer
+    }
+
+    option {
+      background: #231642
+    }
+
+    .frow {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px
+    }
+
+    .aform {
+      background: var(--card2);
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 9px;
+      display: none
+    }
+
+    /* ── MACRO BARS ── */
+    .mbars {
+      display: flex;
+      gap: 8px
+    }
+
+    .mbc {
+      flex: 1;
+      text-align: center
+    }
+
+    .mbw {
+      height: 54px;
+      background: rgba(255, 255, 255, .04);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 5px
+    }
+
+    .mbf {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-radius: 8px 8px 0 0;
+      transition: height .8s ease
+    }
+
+    .mbn {
+      font-size: 10px;
+      color: var(--tsoft)
+    }
+
+    .mbvv {
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      top: calc(var(--st) + 14px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-110px);
+      background: rgba(255, 255, 255, .95);
+      color: #1a0f2e;
+      padding: 11px 22px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 9999;
+      transition: transform .38s cubic-bezier(.4, 0, .2, 1);
+      white-space: normal;
+      max-width: 86vw;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .45)
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0)
+    }
+
+    /* ── MISC ── */
+    .slbl {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--tsoft);
+      margin: 14px 0 9px 2px
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700
+    }
+
+    .bm {
+      background: rgba(52, 211, 153, .13);
+      color: var(--mint)
+    }
+
+    .bro {
+      background: rgba(255, 107, 157, .13);
+      color: var(--rose)
+    }
+
+    .bgo {
+      background: rgba(251, 191, 36, .13);
+      color: var(--gold)
+    }
+
+    .bvi {
+      background: rgba(168, 85, 247, .13);
+      color: var(--violet)
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════ ONBOARDING ══════════════ -->
+  <div id="onboard">
+    <div class="ob-flower">🌸</div>
+    <div class="ob-title">Welcome to Bloom</div>
+    <div class="ob-sub">Your personal wellness companion.<br>Let's set you up in seconds.</div>
+    <div class="ob-card">
+      <div class="ob-label">✦ What's your name?</div>
+      <input class="ob-input" id="obName" placeholder="Enter your name…" autocomplete="off" autocorrect="off"
+        spellcheck="false">
+    </div>
+    <div class="ob-card">
+      <div class="ob-label">✦ Bloom needs these to work best</div>
+      <div class="ob-step-row">
+        <div class="ob-step">📱 <span>Motion Sensor</span> — counts real steps from your phone</div>
+        <div class="ob-step">🔔 <span>Notifications</span> — water, step & meal reminders</div>
+        <div class="ob-step">🔄 <span>Background Sync</span> — steps keep counting when minimized</div>
+      </div>
+    </div>
+    <button class="btn bv bfull" style="margin-bottom:10px" onclick="startApp()">Let's Bloom! 🌸</button>
+    <button class="btn bg bfull" onclick="skipOnboard()">Skip setup</button>
+  </div>
+
+  <!-- ══════════════ MAIN APP ══════════════ -->
+  <div class="shell" id="mainApp" style="display:none">
+
+    <div class="hdr">
+      <div class="hdr-l">
+        <div class="hi">✦ YOUR WELLNESS</div>
+        <div class="hn">Hello, <em id="hdrName">Mama</em> 🌸</div>
+      </div>
+      <div class="hdr-r">
+        <div class="live-pill" id="livePill">
+          <div class="live-pulse"></div>LIVE
+        </div>
+        <div class="icon-btn" onclick="testNotif()">🔔<div class="notif-dot" id="ndot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <div class="pill active" onclick="goPage('home',this)">🏠 Home</div>
+      <div class="pill" onclick="goPage('steps',this)">👟 Steps</div>
+      <div class="pill" onclick="goPage('water',this)">💧 Water</div>
+      <div class="pill" onclick="goPage('diet',this)">🥗 Diet</div>
+      <div class="pill" onclick="goPage('schedule',this)">🗓 Schedule</div>
+      <div class="pill" onclick="goPage('progress',this)">📈 Progress</div>
+    </div>
+
+    <div class="pages">
+
+      <!-- HOME -->
+      <div class="page active" id="pg-home">
+        <div class="qcard">
+          <div class="qt" id="quoteEl">"Every step you take is a vote for the healthier version of you."</div>
+          <div class="qby">— your daily bloom ✦</div>
+        </div>
+        <div class="doccard">
+          <div class="docav">👩‍⚕️</div>
+          <div>
+            <div class="docname">Dr. Priya Sharma</div>
+            <div class="docq" id="tipEl">"Stay hydrated and keep moving today. I'm proud of you! 💜"</div>
+          </div>
+        </div>
+        <div class="sgrid">
+          <div class="mstat">
+            <div class="msi">👟</div>
+            <div class="msv" id="hs-s">0</div>
+            <div class="msl">Steps</div>
+          </div>
+          <div class="mstat">
+            <div class="msi">💧</div>
+            <div class="msv" id="hs-w">0ml</div>
+            <div class="msl">Water</div>
+          </div>
+          <div class="mstat">
+            <div class="msi">🔥</div>
+            <div class="msv" id="hs-c">0</div>
+            <div class="msl">kcal in</div>
+          </div>
+          <div class="mstat">
+            <div class="msi">⚡</div>
+            <div class="msv" id="hs-b">0</div>
+            <div class="msl">kcal out</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🎯 Today's Goals</div>
+          <div class="pbrow">
+            <div class="pblabels"><span>👟 Steps</span><span id="pl-s">0/8,000</span></div>
+            <div class="pbtrack">
+              <div class="pbfill" id="pb-s"
+                style="width:0%;background:linear-gradient(90deg,var(--rose),var(--violet))"></div>
+            </div>
+          </div>
+          <div class="pbrow">
+            <div class="pblabels"><span>💧 Water</span><span id="pl-w">0/2,000ml</span></div>
+            <div class="pbtrack">
+              <div class="pbfill" id="pb-w" style="width:0%;background:linear-gradient(90deg,var(--sky),#60e0ff)"></div>
+            </div>
+          </div>
+          <div class="pbrow">
+            <div class="pblabels"><span>🥗 Calories</span><span id="pl-c">0/1,500kcal</span></div>
+            <div class="pbtrack">
+              <div class="pbfill" id="pb-c" style="width:0%;background:linear-gradient(90deg,var(--gold),var(--amber))">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🔥 7-Day Streak</div>
+          <div class="srow" id="streakRow"></div>
+        </div>
+      </div>
+
+      <!-- STEPS -->
+      <div class="page" id="pg-steps">
+        <svg style="position:absolute;width:0;height:0">
+          <defs>
+            <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff6b9d" />
+              <stop offset="100%" stop-color="#a855f7" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="step-hero">
+          <div class="hero-bg-ring"></div>
+          <div class="clabel" style="position:relative;z-index:1">👟 Live Step Counter</div>
+          <div class="ring-row">
+            <div class="ring-wrap">
+              <svg class="rsvg" viewBox="0 0 108 108">
+                <circle class="rbg" cx="54" cy="54" r="45" />
+                <circle class="rfill" id="sring" cx="54" cy="54" r="45" />
+              </svg>
+              <div class="ring-inner">
+                <div class="rcount" id="rcnt">0</div>
+                <div class="runit">steps</div>
+              </div>
+            </div>
+            <div class="step-meta">
+              <div class="spct" id="spct">0%</div>
+              <div class="sgoal">of <span id="goalLbl">8,000</span> step goal</div>
+              <div class="smsg" id="smsg">Start moving — steps counted live! 🌸</div>
+            </div>
+          </div>
+          <div class="sensor-bar">
+            <div class="sdot" id="sdot"></div>
+            <span id="stxt">Tap Enable to start motion tracking</span>
+            <button class="sbtn" id="sbtn" onclick="toggleSensor()">Enable</button>
+          </div>
+        </div>
+        <div class="sgrid">
+          <div class="mstat">
+            <div class="msi">🔥</div>
+            <div class="msv" id="calBurned">0</div>
+            <div class="msl">kcal Burned</div>
+          </div>
+          <div class="mstat">
+            <div class="msi">📏</div>
+            <div class="msv" id="distEl">0.0km</div>
+            <div class="msl">Distance</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🎯 Set Daily Goal</div>
+          <div class="frow">
+            <input class="fi" id="goalIn" placeholder="Step goal (default 8,000)" type="number" inputmode="numeric">
+            <button class="btn bv bsm" onclick="setGoal()">Set</button>
+          </div>
+          <button class="btn bg bfull bsm" onclick="resetSteps()">↩ Reset Today's Steps</button>
+        </div>
+        <div class="card">
+          <div class="clabel">🧠 Smart Walking Detection</div>
+          <div style="font-size:13px;color:var(--tmid);line-height:1.7">
+            Bloom uses a <strong style="color:var(--violet)">cadence-based algorithm</strong> — it only counts steps
+            when your walking rhythm matches <strong style="color:var(--mint)">1.4–3.5 Hz</strong> (natural human
+            walking pace). Car vibrations, bus rides, and random movements are <strong
+              style="color:var(--rose)">automatically filtered out</strong>.<br><br>
+            Keep your phone in your <strong style="color:var(--gold)">pocket or hand</strong> while walking. The app
+            keeps counting even in the background.
+          </div>
+        </div>
+      </div>
+
+      <!-- WATER -->
+      <div class="page" id="pg-water">
+        <div class="card">
+          <div class="clabel">💧 Hydration Tracker</div>
+          <div class="wrow">
+            <div class="warc">
+              <svg class="wsvg" viewBox="0 0 80 80">
+                <circle class="wbg" cx="40" cy="40" r="35" />
+                <circle class="wfill" id="warc" cx="40" cy="40" r="35" />
+              </svg>
+              <div class="warc-inner">
+                <div class="wml" id="wml">0</div>
+                <div class="wsub2">ml</div>
+              </div>
+            </div>
+            <div>
+              <div class="wbig" id="wbig">0 ml</div>
+              <div class="wgoal">Goal: 2,000 ml</div>
+              <div class="wpct" id="wpct">0% hydrated 💧</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--tsoft);margin-bottom:10px">Tap a glass to log 250ml ↓</div>
+          <div class="ggrid" id="ggrid"></div>
+          <div style="display:flex;gap:8px;margin-top:11px">
+            <button class="btn bg bsm" style="flex:1" onclick="resetWater()">Reset</button>
+            <button class="btn bsm" style="flex:1;background:var(--sky);color:#0a2230;font-weight:700"
+              onclick="fillWater()">Complete 🎉</button>
+          </div>
+        </div>
+        <div class="card"
+          style="background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(0,0,0,0));border-color:rgba(56,189,248,.13)">
+          <div class="clabel">⏰ Hydration Schedule</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div
+              style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+              <div>
+                <div style="font-size:14px;font-weight:500">🌅 Wake up</div>
+                <div style="font-size:11px;color:var(--tsoft)">500ml warm lemon water first thing</div>
+              </div><span class="badge bm">Priority</span>
+            </div>
+            <div
+              style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+              <div>
+                <div style="font-size:14px;font-weight:500">🔔 Every 2 hours</div>
+                <div style="font-size:11px;color:var(--tsoft)">1 glass (250ml) — auto reminded</div>
+              </div><span class="badge bvi">Reminded</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+              <div>
+                <div style="font-size:14px;font-weight:500">🏃‍♀️ Before & after walk</div>
+                <div style="font-size:11px;color:var(--tsoft)">250ml each time</div>
+              </div><span class="badge bgo">Important</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIET -->
+      <div class="page" id="pg-diet">
+        <div class="cban">
+          <div class="cbox">
+            <div class="cbv rose" id="dc-in">0</div>
+            <div class="cbl">Consumed</div>
+          </div>
+          <div class="cbox">
+            <div class="cbv mint" id="dc-goal">1500</div>
+            <div class="cbl">Goal</div>
+          </div>
+          <div class="cbox">
+            <div class="cbv gold" id="dc-rem">1500</div>
+            <div class="cbl">Remaining</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🧬 Macros Today</div>
+          <div class="mbars">
+            <div class="mbc">
+              <div class="mbw">
+                <div class="mbf" id="mb-c" style="height:0%;background:var(--gold)"></div>
+              </div>
+              <div class="mbvv" id="mv-c">0g</div>
+              <div class="mbn">Carbs</div>
+            </div>
+            <div class="mbc">
+              <div class="mbw">
+                <div class="mbf" id="mb-p" style="height:0%;background:var(--rose)"></div>
+              </div>
+              <div class="mbvv" id="mv-p">0g</div>
+              <div class="mbn">Protein</div>
+            </div>
+            <div class="mbc">
+              <div class="mbw">
+                <div class="mbf" id="mb-f" style="height:0%;background:var(--mint)"></div>
+              </div>
+              <div class="mbvv" id="mv-f">0g</div>
+              <div class="mbn">Fat</div>
+            </div>
+            <div class="mbc">
+              <div class="mbw">
+                <div class="mbf" id="mb-fi" style="height:0%;background:var(--sky)"></div>
+              </div>
+              <div class="mbvv" id="mv-fi">0g</div>
+              <div class="mbn">Fiber</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🍽️ Meal Log</div>
+          <div id="mealLog"></div>
+          <button class="btn br bfull" style="margin-top:11px" onclick="toggleMealForm()">+ Log a Meal</button>
+          <div class="aform" id="addMealForm">
+            <div class="frow"><input class="fi" id="mn" placeholder="Meal name" style="flex:2"><select class="fsel"
+                id="me">
+                <option value="🥣">🥣 Breakfast</option>
+                <option value="🍽️">🍽️ Lunch</option>
+                <option value="🌙">🌙 Dinner</option>
+                <option value="🍎">🍎 Snack</option>
+                <option value="🥤">🥤 Drink</option>
+              </select></div>
+            <div class="frow"><input class="fi" id="mc" type="number" placeholder="Calories" inputmode="numeric"><input
+                class="fi" id="mcarb" type="number" placeholder="Carbs g" inputmode="numeric"></div>
+            <div class="frow"><input class="fi" id="mprot" type="number" placeholder="Protein g"
+                inputmode="numeric"><input class="fi" id="mfat" type="number" placeholder="Fat g" inputmode="numeric">
+            </div>
+            <div class="frow"><input class="fi" id="mfib" type="number" placeholder="Fiber g" inputmode="numeric"></div>
+            <button class="btn br bfull" onclick="addMeal()">Add to Log ✓</button>
+          </div>
+        </div>
+
+        <!-- DOCTOR PLAN — EDITABLE -->
+        <div class="card">
+          <div class="clabel" style="justify-content:space-between">
+            <span>👩‍⚕️ Doctor's Meal Plan</span>
+            <span style="font-size:10px;color:var(--violet);cursor:pointer" onclick="addPlanMeal()">+ Add Meal</span>
+          </div>
+          <div id="planList"></div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE — EDITABLE -->
+      <div class="page" id="pg-schedule">
+        <div class="card">
+          <div class="clabel" style="justify-content:space-between">
+            <span>🌸 Daily Wellness Timeline</span>
+            <span style="font-size:10px;color:var(--violet);cursor:pointer" onclick="addScheduleItem()">+ Add</span>
+          </div>
+          <div id="schedList"></div>
+        </div>
+        <div class="card">
+          <div class="clabel">🔔 Smart Reminders</div>
+          <div id="remList"></div>
+        </div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="page" id="pg-progress">
+        <div class="card">
+          <div class="clabel">⚖️ Weight Tracker</div>
+          <div class="frow"><input class="fi" id="wIn" type="number" placeholder="Today's weight (kg)" step="0.1"
+              inputmode="decimal"><button class="btn bv bsm" onclick="logWeight()">Log</button></div>
+          <div id="wList"></div>
+        </div>
+        <div class="card">
+          <div class="clabel">📊 BMI Calculator</div>
+          <div class="frow"><input class="fi" id="bW" type="number" placeholder="Weight (kg)" step="0.1"
+              inputmode="decimal"><input class="fi" id="bH" type="number" placeholder="Height (cm)" inputmode="numeric">
+          </div>
+          <button class="btn bv bfull" style="margin-bottom:13px" onclick="calcBMI()">Calculate BMI</button>
+          <div id="bmiOut" style="display:none">
+            <div style="text-align:center;margin-bottom:13px">
+              <div style="font-family:'Fraunces',serif;font-size:50px;line-height:1" id="bmiVal">–</div>
+              <div id="bmiCat" class="badge" style="margin:6px auto 0;display:inline-block">–</div>
+            </div>
+            <div class="bmibar">
+              <div class="bmiseg" style="background:#38bdf8;flex:1.5"></div>
+              <div class="bmiseg" style="background:#34d399;flex:1.5"></div>
+              <div class="bmiseg" style="background:#fbbf24;flex:1.5"></div>
+              <div class="bmiseg" style="background:#f97316;flex:1"></div>
+              <div class="bmiseg" style="background:#ef4444;flex:1"></div>
+            </div>
+            <div class="bmilab"><span>&lt;18.5</span><span>18.5–25</span><span>25–30</span><span>≥30</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="clabel">🏆 Achievements</div>
+          <div id="achList"></div>
+        </div>
+        <div class="card"
+          style="background:linear-gradient(135deg,rgba(108,40,160,.18),rgba(20,8,40,.4));border-color:rgba(168,85,247,.14)">
+          <div class="clabel">💌 Message from Dr. Priya</div>
+          <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;line-height:1.7;color:var(--tmid)">
+            "Every small step matters. Consistency beats perfection. Log your meals, drink your water, and trust the
+            process. I'm so proud of your journey. Keep blooming! 🌸"</div>
+          <div style="font-size:11px;color:var(--tsoft);margin-top:9px">— Dr. Priya Sharma, Dietitian</div>
+        </div>
+      </div>
+
+    </div><!-- /pages -->
+  </div><!-- /shell -->
+
+  <!-- ══════════════ EDIT MODAL ══════════════ -->
+  <div class="modal-backdrop" id="editModal" onclick="closeModal(event)">
+    <div class="modal" id="editModalInner">
+      <div class="modal-title"><span id="modalTitle">Edit</span><span class="modal-close"
+          onclick="closeModalDirect()">✕</span></div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ══════════════ SERVICE WORKER INLINE ══════════════ -->
+  <script id="swSource" type="text/plain">
+const CH='bloom-sw-v1';
+self.addEventListener('install',e=>{ self.skipWaiting(); });
+self.addEventListener('activate',e=>{ e.waitUntil(self.clients.claim()); });
+
+// BroadcastChannel for step sync
+let bc;
+try { bc = new BroadcastChannel('bloom-steps'); } catch(e){}
+
+// Keep alive by responding to messages
+self.addEventListener('message', e => {
+  if(e.data && e.data.type === 'PING') {
+    e.source && e.source.postMessage({type:'PONG'});
+  }
+});
+
+// Push notification handler
+self.addEventListener('push', e => {
+  const data = e.data ? e.data.json() : {title:'Bloom 🌸', body:'Reminder!'};
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌸</text></svg>',
+    vibrate: [200,80,200],
+    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌸</text></svg>',
+  }));
+});
+
+self.addEventListener('notificationclick', e => { e.notification.close(); });
+</script>
+
+  <script>
+    // ══════════════════════════════════════════════════════
+    // PERSISTENT STATE  (localStorage)
+    // ══════════════════════════════════════════════════════
+    const STORE_KEY = 'bloom_v4';
+    let S = load();
+
+    function defaultState() {
+      return {
+        userName: '',
+        steps: 0,
+        stepGoal: 8000,
+        stepDate: today(),
+        water: 0,
+        waterGoal: 8,
+        meals: [],
+        weights: [],
+        notifGranted: false,
+        sensorOn: false,
+        calTarget: 1500,
+        planMeals: [
+          { id: 1, icon: '🌅', label: 'Breakfast', labelColor: '#fbbf24', time: '7–8 AM', name: 'Oatmeal + boiled egg + green tea', kcal: 350 },
+          { id: 2, icon: '🍎', label: 'Snack', labelColor: '#34d399', time: '10 AM', name: 'Seasonal fruit or a handful of nuts', kcal: 150 },
+          { id: 3, icon: '☀️', label: 'Lunch', labelColor: '#ff6b9d', time: '12:30 PM', name: 'Brown rice + dal + salad + curd', kcal: 500 },
+          { id: 4, icon: '🌿', label: 'Snack', labelColor: '#38bdf8', time: '4 PM', name: 'Buttermilk or fruit', kcal: 150 },
+          { id: 5, icon: '🌙', label: 'Dinner', labelColor: '#a855f7', time: '7–7:30 PM', name: 'Grilled paneer/chicken + veggies + soup', kcal: 450 },
+        ],
+        schedule: [
+          { id: 1, time: '6:00 AM', title: 'Wake up & drink water', sub: '500ml warm lemon water', e: '🌅', c: '#38bdf8', done: false },
+          { id: 2, time: '6:30 AM', title: 'Morning walk / yoga', sub: '30 mins light movement', e: '🧘‍♀️', c: '#34d399', done: false },
+          { id: 3, time: '7:30 AM', title: 'Healthy breakfast', sub: 'Oatmeal + egg + green tea', e: '🥣', c: '#fbbf24', done: false },
+          { id: 4, time: '10:00 AM', title: 'Morning snack', sub: 'Fruit or nuts (~150 kcal)', e: '🍎', c: '#f97316', done: false },
+          { id: 5, time: '10:30 AM', title: 'Water break', sub: 'Drink 1 full glass (250ml)', e: '💧', c: '#38bdf8', done: false },
+          { id: 6, time: '12:30 PM', title: 'Lunch time', sub: 'Brown rice + dal + salad', e: '🍽️', c: '#fbbf24', done: false },
+          { id: 7, time: '2:00 PM', title: 'Post-lunch walk', sub: '1,000–2,000 steps', e: '🚶‍♀️', c: '#34d399', done: false },
+          { id: 8, time: '4:00 PM', title: 'Evening snack', sub: 'Buttermilk or fruit', e: '🌿', c: '#34d399', done: false },
+          { id: 9, time: '5:30 PM', title: 'Main exercise walk', sub: 'Brisk 30-min walk (4,000+ steps)', e: '🏃‍♀️', c: '#ff6b9d', done: false },
+          { id: 10, time: '7:00 PM', title: 'Relaxation stretch', sub: 'Light yoga or meditation', e: '🧘‍♀️', c: '#a855f7', done: false },
+          { id: 11, time: '7:30 PM', title: 'Dinner', sub: 'Protein + veggies + soup', e: '🌙', c: '#a855f7', done: false },
+          { id: 12, time: '9:30 PM', title: 'Final water check', sub: 'Finish 2L goal if needed', e: '💧', c: '#38bdf8', done: false },
+          { id: 13, time: '10:00 PM', title: 'Sleep routine', sub: '7–8 hours beauty sleep 💤', e: '😴', c: '#a855f7', done: false },
+        ],
+        reminders: [
+          { title: '💧 Hydration Reminder', time: 'Every 2 hours', on: true },
+          { title: '👟 Step Goal Alert', time: '6 PM if goal not reached', on: true },
+          { title: '🥗 Meal Logging', time: 'At meal times', on: true },
+          { title: '💊 Vitamins Reminder', time: 'After breakfast & dinner', on: true },
+          { title: '⚖️ Morning Weigh-in', time: 'Every Monday 7 AM', on: false },
+          { title: '👩‍⚕️ Doctor Check-in', time: 'Monthly appointment', on: false },
+        ],
+      };
+    }
+
+    function load() {
+      try { const d = JSON.parse(localStorage.getItem(STORE_KEY)); return d ? { ...defaultState(), ...d } : defaultState(); }
+      catch (e) { return defaultState(); }
+    }
+    function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { } }
+    function today() { return new Date().toDateString(); }
+
+    // Reset steps each new day
+    function checkDayReset() {
+      if (S.stepDate !== today()) { S.steps = 0; S.stepDate = today(); save(); }
+    }
+
+    // ══════════════════════════════════════════════════════
+    // SERVICE WORKER REGISTRATION
+    // ══════════════════════════════════════════════════════
+    let swReg = null;
+    async function registerSW() {
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        const src = document.getElementById('swSource').textContent;
+        const blob = new Blob([src], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+        swReg = await navigator.serviceWorker.register(url, { scope: '/' });
+        console.log('SW registered');
+        // Keep SW alive with periodic pings
+        setInterval(() => {
+          if (swReg && swReg.active) swReg.active.postMessage({ type: 'PING' });
+        }, 25000);
+      } catch (e) { console.warn('SW reg failed:', e); }
+    }
+
+    // ══════════════════════════════════════════════════════
+    // STEP COUNTING — HUMAN WALKING FILTER
+    // ══════════════════════════════════════════════════════
+    // Algorithm: 
+    // 1. Collect raw accelerometer magnitude samples at ~50Hz
+    // 2. Apply high-pass filter (remove gravity component)
+    // 3. Detect peaks within 1.4–3.5 Hz cadence window (280–700ms between steps)
+    // 4. Require consecutive peaks to confirm walking (not vehicle vibration)
+    // Vehicle vibration is random-frequency or very fast; walking has a consistent cadence.
+
+    let motionOn = false;
+    let motionHandler = null;
+    let lastPeakTime = 0;
+    let prevFiltered = 0;
+    let peakConfirmBuffer = []; // cadence intervals for consistency check
+    const MIN_STEP_INTERVAL = 280;  // ms — max 3.5 steps/sec
+    const MAX_STEP_INTERVAL = 820;  // ms — min 1.2 steps/sec (slow walk)
+    const PEAK_THRESH = 1.8;        // m/s² above mean (gravity-normalised)
+    const REQUIRE_CONSISTENT = 2;   // need N consistent cadence samples before counting
+
+    let accelSamples = [];
+    let rollingMean = 9.8;
+    const ALPHA = 0.95; // IIR filter coefficient (gravity removal)
+
+    function processMotion(e) {
+      const ag = e.accelerationIncludingGravity;
+      if (!ag) return;
+      const x = ag.x || 0, y = ag.y || 0, z = ag.z || 0;
+      const mag = Math.sqrt(x * x + y * y + z * z);
+
+      // Running mean to track gravity
+      rollingMean = ALPHA * rollingMean + (1 - ALPHA) * mag;
+      const filtered = mag - rollingMean; // gravity-removed signal
+
+      const now = Date.now();
+      const dt = now - lastPeakTime;
+
+      // Peak detection: zero-crossing (negative → positive) AND above threshold
+      const isPeak = (prevFiltered < 0 && filtered >= 0 && filtered > PEAK_THRESH);
+
+      if (isPeak && dt > MIN_STEP_INTERVAL) {
+        if (dt < MAX_STEP_INTERVAL) {
+          // Within valid walking cadence range — record interval
+          peakConfirmBuffer.push(dt);
+          if (peakConfirmBuffer.length > 5) peakConfirmBuffer.shift();
+
+          // Check cadence consistency: std-dev of intervals should be low
+          if (peakConfirmBuffer.length >= REQUIRE_CONSISTENT) {
+            const mean = peakConfirmBuffer.reduce((a, b) => a + b, 0) / peakConfirmBuffer.length;
+            const variance = peakConfirmBuffer.reduce((a, b) => a + (b - mean) ** 2, 0) / peakConfirmBuffer.length;
+            const stdDev = Math.sqrt(variance);
+            // Walking has consistent cadence (stdDev < 120ms), vehicle vibration is erratic
+            if (stdDev < 130) {
+              S.steps++;
+              save();
+              updateAll();
+              stepMilestone();
+            }
+          }
+        } else {
+          // Gap too long (paused walking) — reset confirmation buffer
+          peakConfirmBuffer = [];
+        }
+        lastPeakTime = now;
+      }
+      prevFiltered = filtered;
+    }
+
+    async function toggleSensor() {
+      if (motionOn) { stopSensor(); return; }
+      await startSensor();
+    }
+
+    async function startSensor() {
+      // iOS 13+ permission
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          const p = await DeviceMotionEvent.requestPermission();
+          if (p !== 'granted') { setSensorUI('denied'); showToast('Motion permission denied — try Settings > Safari > Motion'); return; }
+        } catch (e) { setSensorUI('denied'); return; }
+      } else if (typeof DeviceMotionEvent === 'undefined') {
+        setSensorUI('unsupported');
+        showToast('Motion sensor not available. Use Chrome/Safari on mobile.');
+        return;
+      }
+
+      motionHandler = processMotion;
+      window.addEventListener('devicemotion', motionHandler, { passive: true });
+      motionOn = true;
+      S.sensorOn = true;
+      save();
+      setSensorUI('active');
+      document.getElementById('livePill').style.display = 'flex';
+      showToast('✅ Step counting started! Walk & it counts automatically 🚶‍♀️');
+    }
+
+    function stopSensor() {
+      if (motionHandler) window.removeEventListener('devicemotion', motionHandler);
+      motionOn = false;
+      S.sensorOn = false;
+      save();
+      setSensorUI('idle');
+      document.getElementById('livePill').style.display = 'none';
+      showToast('Step tracking paused');
+    }
+
+    function setSensorUI(state) {
+      const dot = document.getElementById('sdot'), txt = document.getElementById('stxt'), btn = document.getElementById('sbtn');
+      if (!dot) return;
+      if (state === 'active') { dot.className = 'sdot active'; txt.textContent = 'Counting your steps in real-time…'; btn.textContent = 'Pause'; }
+      else if (state === 'denied') { dot.className = 'sdot denied'; txt.textContent = 'Permission denied — tap to retry'; btn.textContent = 'Retry'; }
+      else if (state === 'unsupported') { dot.className = 'sdot denied'; txt.textContent = 'Motion sensor not supported'; btn.textContent = 'N/A'; }
+      else { dot.className = 'sdot'; txt.textContent = 'Tap to start motion tracking'; btn.textContent = 'Enable'; }
+    }
+
+    function stepMilestone() {
+      const p = S.steps / S.stepGoal;
+      if (S.steps % 1000 === 0 && S.steps > 0) sendNotif(`👟 ${S.steps.toLocaleString()} steps!`, 'You\'re on a roll! Keep going! 💪');
+      if (p >= 1 && S.steps - 1 < S.stepGoal) { sendNotif('🎉 Step Goal Reached!', `${S.stepGoal.toLocaleString()} steps done! You're a champion! 🏆`); showToast('🎉 GOAL REACHED! Amazing, ' + S.userName + '!'); }
+    }
+
+    // Re-attach sensor on page reload if it was on
+    function maybeResumeSensor() {
+      if (S.sensorOn) startSensor();
+    }
+
+    // ══════════════════════════════════════════════════════
+    // NOTIFICATIONS
+    // ══════════════════════════════════════════════════════
+    async function requestNotif() {
+      if (!('Notification' in window)) return false;
+      if (Notification.permission === 'granted') { S.notifGranted = true; return true; }
+      const r = await Notification.requestPermission();
+      S.notifGranted = r === 'granted';
+      save();
+      return S.notifGranted;
+    }
+
+    function sendNotif(title, body) {
+      if (!S.notifGranted || Notification.permission !== 'granted') return;
+      try {
+        const n = new Notification(title, {
+          body, vibrate: [200, 80, 200], tag: title,
+          icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌸</text></svg>',
+        });
+        setTimeout(() => n.close(), 6000);
+      } catch (e) { }
+    }
+
+    function testNotif() {
+      if (!S.notifGranted) {
+        requestNotif().then(ok => {
+          if (ok) { document.getElementById('ndot').classList.add('on'); sendNotif('🌸 Bloom Notifications Active!', 'You\'ll get reminders to walk, drink water & eat well!'); }
+          else showToast('Allow notifications in browser/OS settings 🔔');
+        });
+      } else {
+        sendNotif('🌸 Bloom Reminder', `Keep going, ${S.userName}! Every small step counts! 💪`);
+        showToast('Test notification sent! 🔔');
+      }
+    }
+
+    function startReminderLoop() {
+      setInterval(() => {
+        const h = new Date().getHours();
+        if (S.reminders[0]?.on && S.water < S.waterGoal) sendNotif('💧 Time to Drink Water!', `${S.userName}, you've had ${S.water * 250}ml. Drink one more glass! 🌊`);
+      }, 2 * 60 * 60 * 1000);
+      setInterval(() => {
+        const h = new Date().getHours();
+        if (h === 18 && S.reminders[1]?.on && S.steps < S.stepGoal) sendNotif('👟 Step Goal Reminder!', `${(S.stepGoal - S.steps).toLocaleString()} more steps to go, ${S.userName}! You can do it! 💪`);
+        if (h === 7 && S.reminders[2]?.on) sendNotif('🥣 Breakfast Time!', 'Start your day with a healthy breakfast! 🌅');
+        if (h === 12 && S.reminders[2]?.on) sendNotif('🍽️ Lunch Time!', 'Time for a nourishing lunch!');
+        if (h === 19 && S.reminders[2]?.on) sendNotif('🌙 Dinner Time!', 'Light and healthy dinner time!');
+      }, 60 * 60 * 1000);
+    }
+
+    // ══════════════════════════════════════════════════════
+    // ONBOARDING
+    // ══════════════════════════════════════════════════════
+    async function startApp() {
+      const name = document.getElementById('obName').value.trim();
+      if (!name) { showToast('Please enter your name 🌸'); return; }
+      S.userName = name;
+      save();
+      await launchApp();
+      await requestNotif();
+      if (S.notifGranted) {
+        document.getElementById('ndot').classList.add('on');
+        startReminderLoop();
+        sendNotif('🌸 Welcome to Bloom, ' + name + '!', 'Your wellness journey starts now. Let\'s go! 💪');
+      }
+      await startSensor();
+    }
+
+    async function skipOnboard() {
+      const name = document.getElementById('obName').value.trim() || 'Mama';
+      S.userName = name;
+      save();
+      await launchApp();
+    }
+
+    async function launchApp() {
+      document.getElementById('onboard').classList.add('gone');
+      document.getElementById('mainApp').style.display = '';
+      document.getElementById('hdrName').textContent = S.userName;
+      await registerSW();
+      checkDayReset();
+      updateAll();
+      renderSchedule();
+      renderPlan();
+    }
+
+    // ══════════════════════════════════════════════════════
+    // PAGE NAV
+    // ══════════════════════════════════════════════════════
+    function goPage(name, el) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      document.getElementById('pg-' + name).classList.add('active');
+      el.classList.add('active');
+      updateAll();
+    }
+
+    // ══════════════════════════════════════════════════════
+    // STEPS
+    // ══════════════════════════════════════════════════════
+    function setGoal() {
+      const v = parseInt(document.getElementById('goalIn').value);
+      if (v >= 100) { S.stepGoal = v; document.getElementById('goalIn').value = ''; save(); updateAll(); showToast('Goal set to ' + v.toLocaleString() + ' steps! 🎯'); }
+      else showToast('Please enter a valid goal (100+)');
+    }
+    function resetSteps() { S.steps = 0; save(); updateAll(); showToast('Steps reset 👟'); }
+
+    // ══════════════════════════════════════════════════════
+    // WATER
+    // ══════════════════════════════════════════════════════
+    function renderGlasses() {
+      const g = document.getElementById('ggrid'); if (!g) return;
+      g.innerHTML = '';
+      for (let i = 0; i < S.waterGoal; i++) {
+        const b = document.createElement('div');
+        b.className = 'gbtn' + (i < S.water ? ' filled' : '');
+        b.innerHTML = `<div class="gfill"></div><div style="position:relative;z-index:1;font-size:22px">${i < S.water ? '💧' : '🫙'}</div><div class="gnum">${(i + 1) * 250}ml</div>`;
+        b.onclick = () => tapGlass(i);
+        g.appendChild(b);
+      }
+    }
+    function tapGlass(i) { S.water = (i < S.water) ? i : i + 1; save(); updateAll(); const ml = S.water * 250; if (S.water >= S.waterGoal) { showToast('🎉 Hydration goal done!'); sendNotif('💧 Hydration Complete!', S.userName + ', you drank 2L today! ✨'); } else showToast(ml + 'ml — ' + (S.waterGoal - S.water) + ' glasses left 💧'); }
+    function resetWater() { S.water = 0; save(); updateAll(); showToast('Water reset 💧'); }
+    function fillWater() { S.water = S.waterGoal; save(); updateAll(); showToast('🎉 Full hydration!'); sendNotif('💧 Hydration Complete!', S.userName + ', you drank 2L today! ✨'); }
+
+    // ══════════════════════════════════════════════════════
+    // MEALS
+    // ══════════════════════════════════════════════════════
+    function toggleMealForm() { const f = document.getElementById('addMealForm'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; }
+
+    function addMeal() {
+      const name = document.getElementById('mn').value.trim();
+      const cals = parseInt(document.getElementById('mc').value) || 0;
+      const carbs = parseInt(document.getElementById('mcarb').value) || 0;
+      const prot = parseInt(document.getElementById('mprot').value) || 0;
+      const fat = parseInt(document.getElementById('mfat').value) || 0;
+      const fib = parseInt(document.getElementById('mfib').value) || 0;
+      const emoji = document.getElementById('me').value;
+      if (!name || !cals) { showToast('Enter meal name & calories'); return; }
+      const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      S.meals.push({ name, cals, carbs, prot, fat, fib, emoji, t });
+      save();
+      ['mn', 'mc', 'mcarb', 'mprot', 'mfat', 'mfib'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('addMealForm').style.display = 'none';
+      updateAll();
+      showToast(name + ' logged! (' + cals + ' kcal) 🥗');
+    }
+
+    function delMeal(i) { S.meals.splice(i, 1); save(); updateAll(); showToast('Meal removed'); }
+
+    function renderMeals() {
+      const el = document.getElementById('mealLog'); if (!el) return;
+      if (!S.meals.length) { el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--tsoft);font-size:13px">No meals yet — tap below to add! 🥗</div>'; return; }
+      el.innerHTML = S.meals.map((m, i) => `<div class="meal-item"><div class="memi">${m.emoji}</div><div class="minfo"><div class="mname">${m.name}</div><div class="mtime">${m.t}</div></div><div class="mcal">${m.cals}kcal</div><button class="delbtn" onclick="delMeal(${i})">×</button></div>`).join('');
+    }
+
+    // ══════════════════════════════════════════════════════
+    // DOCTOR PLAN — EDITABLE
+    // ══════════════════════════════════════════════════════
+    function renderPlan() {
+      const el = document.getElementById('planList'); if (!el) return;
+      if (!S.planMeals.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--tsoft);font-size:13px">No plan meals yet. Tap "+ Add Meal" above!</div>'; return; }
+      el.innerHTML = S.planMeals.map((m, i) => `
+    <div class="plan-item">
+      <div class="plan-icon">${m.icon}</div>
+      <div class="plan-body">
+        <div class="plan-meal" style="color:${m.labelColor}">${m.label.toUpperCase()} · ${m.time}</div>
+        <div class="plan-name">${m.name}</div>
+        <div class="plan-kcal">~${m.kcal} kcal</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end">
+        <button class="plan-edit-btn" onclick="editPlanMeal(${i})">✏️ Edit</button>
+        <button class="plan-edit-btn" style="background:rgba(255,107,157,.1);border-color:rgba(255,107,157,.25);color:var(--rose)" onclick="delPlanMeal(${i})">🗑 Del</button>
+      </div>
+    </div>`).join('');
+    }
+
+    function addPlanMeal() {
+      openModal('Add Plan Meal', `
+    <div class="modal-label">Meal Type</div>
+    <input class="modal-input" id="pm-label" placeholder="e.g. Breakfast, Lunch, Snack">
+    <div class="modal-label">Time</div>
+    <input class="modal-input" id="pm-time" placeholder="e.g. 7–8 AM">
+    <div class="modal-label">Meal Name / Description</div>
+    <textarea class="modal-textarea" id="pm-name" placeholder="e.g. Oatmeal + boiled egg + green tea"></textarea>
+    <div class="modal-label">Calories (kcal)</div>
+    <input class="modal-input" id="pm-kcal" type="number" placeholder="350" inputmode="numeric">
+    <div class="modal-label">Icon (emoji)</div>
+    <input class="modal-input" id="pm-icon" placeholder="🍽️" maxlength="4" style="font-size:24px;text-align:center">
+    <button class="btn bv bfull" onclick="savePlanMeal(-1)">Add to Plan ✓</button>
+  `);
+    }
+
+    function editPlanMeal(i) {
+      const m = S.planMeals[i];
+      openModal('Edit Plan Meal', `
+    <div class="modal-label">Meal Type</div>
+    <input class="modal-input" id="pm-label" value="${m.label}">
+    <div class="modal-label">Time</div>
+    <input class="modal-input" id="pm-time" value="${m.time}">
+    <div class="modal-label">Meal Name / Description</div>
+    <textarea class="modal-textarea" id="pm-name">${m.name}</textarea>
+    <div class="modal-label">Calories (kcal)</div>
+    <input class="modal-input" id="pm-kcal" type="number" value="${m.kcal}" inputmode="numeric">
+    <div class="modal-label">Icon (emoji)</div>
+    <input class="modal-input" id="pm-icon" value="${m.icon}" maxlength="4" style="font-size:24px;text-align:center">
+    <button class="btn bv bfull" onclick="savePlanMeal(${i})">Save Changes ✓</button>
+  `);
+    }
+
+    function savePlanMeal(i) {
+      const label = document.getElementById('pm-label').value.trim();
+      const time = document.getElementById('pm-time').value.trim();
+      const name = document.getElementById('pm-name').value.trim();
+      const kcal = parseInt(document.getElementById('pm-kcal').value) || 0;
+      const icon = document.getElementById('pm-icon').value.trim() || '🍽️';
+      if (!label || !name) { showToast('Please fill in meal type and name'); return; }
+      const colors = ['#fbbf24', '#34d399', '#ff6b9d', '#38bdf8', '#a855f7', '#f97316'];
+      const labelColor = colors[Math.floor(Math.random() * colors.length)];
+      const meal = { id: Date.now(), icon, label, labelColor, time, name, kcal };
+      if (i === -1) S.planMeals.push(meal);
+      else { meal.labelColor = S.planMeals[i].labelColor; S.planMeals[i] = meal; }
+      save(); renderPlan(); closeModalDirect();
+      showToast(i === -1 ? 'Meal added to plan! 🥗' : 'Plan meal updated! ✅');
+    }
+
+    function delPlanMeal(i) { S.planMeals.splice(i, 1); save(); renderPlan(); showToast('Plan meal removed'); }
+
+    // ══════════════════════════════════════════════════════
+    // SCHEDULE — EDITABLE
+    // ══════════════════════════════════════════════════════
+    function renderSchedule() {
+      const sl = document.getElementById('schedList'); if (!sl) return;
+      sl.innerHTML = S.schedule.map((s, i) => `
+    <div class="sched-item ${s.done ? 'done' : ''}">
+      <div class="stcol"><div class="stime">${s.time}</div></div>
+      <div class="sdotc" style="background:${s.c};box-shadow:0 0 6px ${s.c}50"></div>
+      <div class="sbody"><div class="stitle">${s.e} ${s.title}</div><div class="ssub">${s.sub}</div></div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+        <div class="scheck ${s.done ? 'done' : ''}" onclick="toggleSched(${i})">✓</div>
+        <button class="sedit-btn" onclick="editSchedItem(${i})">✏️</button>
+      </div>
+    </div>`).join('');
+
+      const rl = document.getElementById('remList'); if (!rl) return;
+      rl.innerHTML = S.reminders.map((r, i) => `
+    <div class="ri">
+      <div><div class="rit">${r.title}</div><div class="rim">${r.time}</div></div>
+      <div class="tog ${r.on ? 'on' : ''}" onclick="toggleRem(${i})"><div class="tok"></div></div>
+    </div>`).join('');
+    }
+
+    function toggleSched(i) { S.schedule[i].done = !S.schedule[i].done; save(); renderSchedule(); if (S.schedule[i].done) showToast('✅ ' + S.schedule[i].title); }
+    function toggleRem(i) { S.reminders[i].on = !S.reminders[i].on; save(); renderSchedule(); showToast(S.reminders[i].on ? '🔔 Reminder on' : '🔕 Reminder off'); }
+
+    function addScheduleItem() {
+      openModal('Add Schedule Item', `
+    <div class="modal-label">Time</div>
+    <input class="modal-input" id="si-time" placeholder="e.g. 8:00 AM">
+    <div class="modal-label">Icon (emoji)</div>
+    <input class="modal-input" id="si-emoji" placeholder="🌟" maxlength="4" style="font-size:24px;text-align:center">
+    <div class="modal-label">Title</div>
+    <input class="modal-input" id="si-title" placeholder="Activity title">
+    <div class="modal-label">Description</div>
+    <textarea class="modal-textarea" id="si-sub" placeholder="Short description"></textarea>
+    <button class="btn bv bfull" onclick="saveSchedItem(-1)">Add to Schedule ✓</button>
+  `);
+    }
+
+    function editSchedItem(i) {
+      const s = S.schedule[i];
+      openModal('Edit Schedule Item', `
+    <div class="modal-label">Time</div>
+    <input class="modal-input" id="si-time" value="${s.time}">
+    <div class="modal-label">Icon (emoji)</div>
+    <input class="modal-input" id="si-emoji" value="${s.e}" maxlength="4" style="font-size:24px;text-align:center">
+    <div class="modal-label">Title</div>
+    <input class="modal-input" id="si-title" value="${s.title}">
+    <div class="modal-label">Description</div>
+    <textarea class="modal-textarea" id="si-sub">${s.sub}</textarea>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn bv" style="flex:2" onclick="saveSchedItem(${i})">Save Changes ✓</button>
+      <button class="btn" style="flex:1;background:rgba(255,107,157,.15);color:var(--rose);border:1px solid rgba(255,107,157,.25)" onclick="deleteSchedItem(${i})">🗑 Delete</button>
+    </div>
+  `);
+    }
+
+    function saveSchedItem(i) {
+      const time = document.getElementById('si-time').value.trim();
+      const e = document.getElementById('si-emoji').value.trim() || '📌';
+      const title = document.getElementById('si-title').value.trim();
+      const sub = document.getElementById('si-sub').value.trim();
+      if (!time || !title) { showToast('Please fill in time and title'); return; }
+      const colors = ['#38bdf8', '#34d399', '#fbbf24', '#f97316', '#ff6b9d', '#a855f7'];
+      const item = { id: Date.now(), time, title, sub, e, c: colors[Math.floor(Math.random() * colors.length)], done: false };
+      if (i === -1) S.schedule.push(item);
+      else { item.done = S.schedule[i].done; item.c = S.schedule[i].c; S.schedule[i] = item; }
+      save(); renderSchedule(); closeModalDirect();
+      showToast(i === -1 ? 'Added to schedule! 🗓' : 'Schedule updated! ✅');
+    }
+
+    function deleteSchedItem(i) { S.schedule.splice(i, 1); save(); renderSchedule(); closeModalDirect(); showToast('Schedule item removed'); }
+
+    // ══════════════════════════════════════════════════════
+    // PROGRESS
+    // ══════════════════════════════════════════════════════
+    function logWeight() {
+      const w = parseFloat(document.getElementById('wIn').value);
+      if (!w || w < 20 || w > 300) { showToast('Enter a valid weight'); return; }
+      const d = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+      S.weights.unshift({ kg: w, d });
+      save(); document.getElementById('wIn').value = '';
+      renderWeights(); showToast('⚖️ ' + w + ' kg logged!');
+    }
+
+    function renderWeights() {
+      const el = document.getElementById('wList'); if (!el) return;
+      if (!S.weights.length) { el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--tsoft);font-size:13px">No entries yet ⚖️</div>'; return; }
+      el.innerHTML = S.weights.slice(0, 7).map((w, i) => {
+        const prev = S.weights[i + 1]; let diff = '';
+        if (prev) { const d = (w.kg - prev.kg).toFixed(1); diff = `<span class="wedi ${d <= 0 ? 'down' : 'up'}">${d <= 0 ? '↓' : '↑'} ${Math.abs(d)}kg</span>`; }
+        return `<div class="we"><span class="wed">${w.d}</span><span class="wev">${w.kg} kg</span>${diff}</div>`;
+      }).join('');
+    }
+
+    function calcBMI() {
+      const w = parseFloat(document.getElementById('bW').value), h = parseFloat(document.getElementById('bH').value) / 100;
+      if (!w || !h || h <= 0) { showToast('Enter valid weight and height'); return; }
+      const bmi = (w / (h * h)).toFixed(1); let cat, cls;
+      if (bmi < 18.5) { cat = 'Underweight'; cls = 'bvi'; } else if (bmi < 25) { cat = 'Normal ✅'; cls = 'bm'; } else if (bmi < 30) { cat = 'Overweight'; cls = 'bgo'; } else { cat = 'Obese'; cls = 'bro'; }
+      document.getElementById('bmiVal').textContent = bmi;
+      const c = document.getElementById('bmiCat'); c.textContent = cat; c.className = 'badge ' + cls;
+      document.getElementById('bmiOut').style.display = 'block';
+      showToast('BMI: ' + bmi + ' — ' + cat);
+    }
+
+    function renderAchievements() {
+      const tc = S.meals.reduce((s, m) => s + m.cals, 0);
+      const achs = [
+        { e: '🌸', t: 'First Bloom', d: 'Started your wellness journey', ok: true },
+        { e: '💧', t: 'Hydration Hero', d: 'Drank 2L of water in a day', ok: S.water >= S.waterGoal },
+        { e: '👟', t: 'Step Champion', d: 'Reached your daily step goal', ok: S.steps >= S.stepGoal },
+        { e: '🥗', t: 'Mindful Eater', d: 'Logged 3+ meals in a day', ok: S.meals.length >= 3 },
+        { e: '⚖️', t: 'Weight Watcher', d: 'Logged weight 3 times', ok: S.weights.length >= 3 },
+        { e: '🔥', t: '5K Steps', d: 'Walked 5,000+ steps in a day', ok: S.steps >= 5000 },
+        { e: '⚡', t: 'Calorie Aware', d: 'Stayed within 1,500 kcal goal', ok: tc > 0 && tc <= 1500 },
+        { e: '🏆', t: 'Week Warrior', d: '7-day perfect streak', ok: false },
+      ];
+      const el = document.getElementById('achList'); if (!el) return;
+      el.innerHTML = achs.map(a => `<div class="ach ${a.ok ? 'earned' : ''}"><div class="achi">${a.e}</div><div><div class="acht">${a.t}</div><div class="achd">${a.d}</div></div><div style="font-size:18px;margin-left:auto">${a.ok ? '✅' : '🔒'}</div></div>`).join('');
+    }
+
+    function renderStreak() {
+      const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S']; const d = new Date().getDay(); const ti = d === 0 ? 6 : d - 1;
+      const el = document.getElementById('streakRow'); if (!el) return;
+      el.innerHTML = days.map((day, i) => { const cls = i === ti ? 'today' : i < ti ? 'done' : 'empty'; return `<div class="sd ${cls}"><div>${i < ti ? '✓' : i === ti ? '★' : ''}</div><div class="dl">${day}</div></div>`; }).join('');
+    }
+
+    // ══════════════════════════════════════════════════════
+    // MODAL
+    // ══════════════════════════════════════════════════════
+    function openModal(title, bodyHTML) {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').innerHTML = bodyHTML;
+      document.getElementById('editModal').classList.add('open');
+      // Focus first input
+      setTimeout(() => { const fi = document.querySelector('#modalBody input,#modalBody textarea'); if (fi) fi.focus(); }, 350);
+    }
+
+    function closeModal(e) { if (e.target === document.getElementById('editModal')) closeModalDirect(); }
+    function closeModalDirect() { document.getElementById('editModal').classList.remove('open'); }
+
+    // ══════════════════════════════════════════════════════
+    // MASTER UPDATE
+    // ══════════════════════════════════════════════════════
+    function updateAll() {
+      const sp = Math.min(S.steps / S.stepGoal, 1);
+      const wp = Math.min(S.water / S.waterGoal, 1);
+      const tc = S.meals.reduce((s, m) => s + m.cals, 0);
+      const tcarb = S.meals.reduce((s, m) => s + (m.carbs || 0), 0);
+      const tprot = S.meals.reduce((s, m) => s + (m.prot || 0), 0);
+      const tfat = S.meals.reduce((s, m) => s + (m.fat || 0), 0);
+      const tfib = S.meals.reduce((s, m) => s + (m.fib || 0), 0);
+      const cp = Math.min(tc / S.calTarget, 1);
+      const burned = Math.round(S.steps * 0.042);
+      const dist = (S.steps * 0.00076).toFixed(1);
+      const wml = S.water * 250;
+
+      // Step ring (circumference of r=45 = 2π×45 ≈ 283, but viewBox r=45 on 108 canvas — 2*pi*45=282.7)
+      const circ = 282.7;
+      sel('sring', 'stroke-dashoffset', (circ - (sp * circ)).toFixed(1));
+      txt('rcnt', S.steps.toLocaleString());
+      txt('spct', Math.round(sp * 100) + '%');
+      txt('goalLbl', S.stepGoal.toLocaleString());
+      txt('smsg', sp >= 1 ? '🎉 GOAL COMPLETE! You\'re a champion!' : sp >= 0.75 ? 'Almost there! Push a little more! 🏃‍♀️' : sp >= 0.5 ? 'Halfway! Keep going! 💪' : sp >= 0.25 ? 'Great start! Keep moving! 🌸' : 'Start moving — steps counted live! 🌸');
+      txt('calBurned', burned); txt('distEl', dist + 'km');
+
+      // Water arc (r=35, circ=219.9)
+      const wcirc = 219.9;
+      sel('warc', 'stroke-dashoffset', (wcirc - (wp * wcirc)).toFixed(1));
+      txt('wml', wml); txt('wbig', wml + ' ml'); txt('wpct', Math.round(wp * 100) + '% hydrated 💧');
+
+      // Home stats
+      txt('hs-s', S.steps.toLocaleString()); txt('hs-w', wml + 'ml'); txt('hs-c', tc); txt('hs-b', burned);
+
+      // Progress bars
+      pw('pb-s', sp * 100); pw('pb-w', wp * 100); pw('pb-c', cp * 100);
+      txt('pl-s', S.steps.toLocaleString() + '/' + S.stepGoal.toLocaleString());
+      txt('pl-w', wml + '/2,000ml'); txt('pl-c', tc + '/1,500kcal');
+
+      // Diet
+      txt('dc-in', tc); txt('dc-rem', Math.max(0, S.calTarget - tc));
+      ph('mb-c', Math.min(tcarb / 200 * 100, 100)); ph('mb-p', Math.min(tprot / 120 * 100, 100));
+      ph('mb-f', Math.min(tfat / 60 * 100, 100)); ph('mb-fi', Math.min(tfib / 30 * 100, 100));
+      txt('mv-c', tcarb + 'g'); txt('mv-p', tprot + 'g'); txt('mv-f', tfat + 'g'); txt('mv-fi', tfib + 'g');
+
+      renderGlasses(); renderMeals(); renderWeights(); renderAchievements(); renderStreak();
+      if (S.sensorOn) setSensorUI('active'); else setSensorUI('idle');
+    }
+
+    function sel(id, attr, val) { const e = document.getElementById(id); if (e) e.setAttribute(attr, val); }
+    function txt(id, val) { const e = document.getElementById(id); if (e) e.textContent = val; }
+    function pw(id, pct) { const e = document.getElementById(id); if (e) e.style.width = Math.min(pct, 100) + '%'; }
+    function ph(id, pct) { const e = document.getElementById(id); if (e) e.style.height = Math.min(pct, 100) + '%'; }
+
+    // ══════════════════════════════════════════════════════
+    // TOAST
+    // ══════════════════════════════════════════════════════
+    let toastT;
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800); }
+
+    // ══════════════════════════════════════════════════════
+    // QUOTES & TIPS
+    // ══════════════════════════════════════════════════════
+    const QUOTES = ['"Every step you take is a vote for the healthier version of you."', '"Small steps every day create extraordinary results."', '"Your body is your home — keep it healthy and it will keep you strong."', '"Progress, not perfection. You are doing amazing! 💪"', '"Drink water, move your body, nourish your soul."', '"You didn\'t come this far to only come this far. 🦋"', '"A journey of a thousand miles begins with a single step."'];
+    const TIPS = ['"Hit 8,000 steps and drink 2L water today. You\'ve got this! 💪"', '"Eat slowly — it helps you feel full on less food! 🥗"', '"Morning walks before breakfast burn more fat. Try it! 🌅"', '"Sleep well tonight — poor sleep increases hunger hormones 😴"', '"Protein at every meal keeps you full longer. Add egg or paneer! 🥚"', '"Consistency beats perfection every single time 🌸"'];
+
+    // ══════════════════════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════════════════════
+    function init() {
+      // Check if user already set up
+      if (S.userName) {
+        document.getElementById('onboard').classList.add('gone');
+        document.getElementById('mainApp').style.display = '';
+        document.getElementById('hdrName').textContent = S.userName;
+        checkDayReset();
+        registerSW();
+        if (S.notifGranted) { document.getElementById('ndot').classList.add('on'); startReminderLoop(); }
+        maybeResumeSensor();
+        updateAll();
+        renderSchedule();
+        renderPlan();
+      } else {
+        // Pre-fill name input in case it's a return visit
+        document.getElementById('obName').focus();
+      }
+      document.getElementById('quoteEl').textContent = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+      document.getElementById('tipEl').textContent = TIPS[Math.floor(Math.random() * TIPS.length)];
+    }
+
+    // Page visibility: re-check steps date on resume
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkDayReset(); updateAll(); } });
+    // Prevent body scroll
+    document.body.addEventListener('touchmove', e => { if (e.target === document.body) e.preventDefault(); }, { passive: false });
+
+    init();
+  </script>
+</body>
+
+</html>
