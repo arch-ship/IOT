@@ -46,7 +46,7 @@ const BloomSensors = (() => {
   const STEP = {
     MIN_INTERVAL:   290,   // ms  — max 3.4 steps/sec (fast run)
     MAX_INTERVAL:   820,   // ms  — min 1.2 steps/sec (very slow walk)
-    PEAK_THRESH:    1.8,   // m/s² above filtered baseline
+    PEAK_THRESH:    0.8,   // m/s² — post-filter amplitude is 0.5-1.2 m/s²
     CONFIRM_COUNT:  5,     // consecutive valid intervals required
     MAX_STD_DEV:    80,    // ms  — cadence must be THIS consistent
     CONFIDENCE_MAX: 8,     // max confidence score
@@ -89,9 +89,18 @@ const BloomSensors = (() => {
 
     const now = Date.now();
 
-    // ── Peak detection: positive zero-crossing of LP signal ──────
-    // (signal goes from negative → positive AND exceeds threshold)
-    const isPeak = (stepState.prevLp < 0 && lp >= 0 && lp > STEP.PEAK_THRESH);
+    // ── Peak detection: upward threshold crossing ─────────────
+    // Detects when filtered signal RISES FROM below threshold TO above it.
+    //
+    // WHY NOT zero-crossing + amplitude check:
+    //   The old code: (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
+    //   is broken — at a zero-crossing lp ≈ 0, so lp > 0.8 is never true.
+    //
+    // Upward threshold crossing is correct:
+    //   Each walking step pushes the filtered signal above the threshold once.
+    //   Detecting the rising edge (prev below, now above) fires exactly once
+    //   per step peak — clean, reliable, no false triggers.
+    const isPeak = (stepState.prevLp < STEP.PEAK_THRESH && lp >= STEP.PEAK_THRESH);
     stepState.prevLp = lp;
 
     if (!isPeak) return;
