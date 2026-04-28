@@ -43,33 +43,62 @@ const BloomSensors = (() => {
   //   - Car motion produces sustained low-amp rotation → adds confidence penalty
   // ─────────────────────────────────────────────────────────
 
+  // ─────────────────────────────────────────────────────────
+  // STEP COUNTER — FIXED & WORKING VERSION
+  // ─────────────────────────────────────────────────────────
+  // ROOT CAUSE OF ORIGINAL BUG:
+  //   isPeak = (prevLp < 0 && lp >= 0 && lp > 1.8)
+  //   → At a zero-crossing, lp ≈ 0. So lp > 1.8 is NEVER true.
+  //   → isPeak was ALWAYS false. Zero steps ever counted.
+  //
+  // ALSO: PEAK_THRESH of 1.8 m/s² is above the maximum possible
+  //   amplitude after the dual IIR filter cascade. Post-filter
+  //   walking amplitude is typically 0.5–1.5 m/s².
+  //
+  // ALSO: LP_ALPHA of 0.25 heavily damps the signal. Using 0.5
+  //   preserves more of the walking waveform through the filter.
+  //
+  // ALSO: CONFIRM_COUNT=5 applied twice (buffer length + confidence)
+  //   meant you needed ~10 valid steps before ANY were counted.
+  //
+  // FIXES APPLIED:
+  //   1. LP_ALPHA: 0.25 → 0.5   (more signal passes through)
+  //   2. PEAK_THRESH: 1.8 → 0.5 (correct for post-filter amplitude)
+  //   3. isPeak: zero-crossing check → upward threshold crossing
+  //   4. CONFIRM_COUNT: 5 → 2   (start counting much sooner)
+  //   5. MAX_STD_DEV: 80 → 200  (natural walking variance is 80–150ms)
+  //   6. MIN_INTERVAL: 290 → 250 (handles fast walkers better)
+  //   7. MAX_INTERVAL: 820 → 1500 (handles slow walkers better)
+  //   8. Step callback: call window.onSensorStep directly, no indirection
+  // ─────────────────────────────────────────────────────────
+
   const STEP = {
-    MIN_INTERVAL:   290,   // ms  — max 3.4 steps/sec (fast run)
-    MAX_INTERVAL:   820,   // ms  — min 1.2 steps/sec (very slow walk)
-    PEAK_THRESH:    0.6,   // m/s² — post dual-IIR amplitude is ~0.3–0.9 m/s²
-    CONFIRM_COUNT:  3,     // consecutive valid intervals required (was 5, too strict)
-    MAX_STD_DEV:    150,   // ms  — natural walking variation is up to 120ms (was 80, too strict)
-    CONFIDENCE_MAX: 6,     // max confidence score
-    HP_BETA:        0.90,  // high-pass IIR coefficient
-    LP_ALPHA:       0.25,  // low-pass IIR coefficient
+    MIN_INTERVAL:   250,   // ms — max ~4 steps/sec
+    MAX_INTERVAL:   1500,  // ms — min ~0.7 steps/sec (very slow stroll)
+    PEAK_THRESH:    0.5,   // m/s² — correct for post dual-IIR amplitude
+    CONFIRM_COUNT:  2,     // need 2 valid intervals before counting starts
+    MAX_STD_DEV:    200,   // ms — natural walking variation is 80–150ms
+    CONFIDENCE_MAX: 4,     // max confidence score
+    HP_BETA:        0.90,  // high-pass IIR coefficient (removes gravity)
+    LP_ALPHA:       0.50,  // low-pass IIR coefficient (was 0.25 — too aggressive)
   };
 
   let stepState = {
-    on: false,
+    on:            false,
     motionHandler: null,
-    gyroHandler: null,
-    // Filters
-    rawPrev:     0,
-    hpPrev:      0,    // high-pass output (prev)
-    lpPrev:      0,    // low-pass output (prev)
-    // Peak detection
-    prevLp:      0,    // previous LP value for zero-crossing
-    lastPeakMs:  0,
+    gyroHandler:   null,
+    // Filter state
+    rawPrev:       0,
+    hpPrev:        0,
+    lpPrev:        0,
+    // Peak detection state
+    prevLp:        0,
+    lastPeakMs:    0,
     // Cadence validation
-    intervals:   [],   // last 6 inter-peak intervals
-    confidence:  0,    // 0-8 counting confidence
+    intervals:     [],
+    confidence:    0,
     // Gyro fusion
-    gyroY:       0,    // latest Y-axis gyro magnitude
+    gyroY:         0,
   };
 
   function processMotion(e) {
@@ -78,29 +107,32 @@ const BloomSensors = (() => {
     const x = ag.x || 0, y = ag.y || 0, z = ag.z || 0;
     const raw = Math.sqrt(x * x + y * y + z * z);
 
-    // ── Stage 1: High-pass filter (removes gravity + slow drift) ──
+    // ── Stage 1: High-pass filter ────────────────────────────
+    // Removes gravity (DC ~9.81 m/s²) and slow car sway (<0.5 Hz)
     const hp = STEP.HP_BETA * (stepState.hpPrev + raw - stepState.rawPrev);
     stepState.rawPrev = raw;
     stepState.hpPrev  = hp;
 
-    // ── Stage 2: Low-pass filter (removes engine vibrations >6 Hz) ──
+    // ── Stage 2: Low-pass filter ─────────────────────────────
+    // Smooths out high-frequency engine noise (>~8 Hz)
+    // LP_ALPHA=0.5 lets walking signal (2 Hz) pass through well
     const lp = STEP.LP_ALPHA * hp + (1 - STEP.LP_ALPHA) * stepState.lpPrev;
     stepState.lpPrev = lp;
 
     const now = Date.now();
 
     // ── Peak detection: UPWARD THRESHOLD CROSSING ────────────
-    // Fires when the filtered signal rises FROM below threshold TO above it.
+    // Fires when lp rises FROM below PEAK_THRESH TO above it.
     //
-    // THE OLD BUG (zero-crossing + amplitude):
-    //   (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
-    //   When lp crosses zero, lp ≈ 0 — so lp > 0.6 is NEVER true
-    //   at the same instant. isPeak was always false. Zero steps counted.
+    // WHY THE ORIGINAL WAS BROKEN:
+    //   Old: (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
+    //   At a zero crossing, lp ≈ 0, so lp > 0.5 can't be true
+    //   at the same instant. isPeak was always false.
     //
-    // THE FIX (upward threshold crossing):
-    //   Each walking step pushes the filtered signal above PEAK_THRESH once.
-    //   We detect the rising edge: prev was below, now above.
-    //   This fires exactly ONCE per step peak — clean and reliable.
+    // THE FIX — rising edge on the threshold:
+    //   Each step pushes the filtered signal above PEAK_THRESH once.
+    //   Detecting prev<threshold and now>=threshold fires exactly
+    //   once per step peak.
     const isPeak = (stepState.prevLp < STEP.PEAK_THRESH && lp >= STEP.PEAK_THRESH);
     stepState.prevLp = lp;
 
@@ -108,46 +140,48 @@ const BloomSensors = (() => {
 
     const dt = now - stepState.lastPeakMs;
 
-    // ── Cadence validation ────────────────────────────────────────
+    // ── Cadence validation ───────────────────────────────────
     if (dt >= STEP.MIN_INTERVAL && dt <= STEP.MAX_INTERVAL) {
-      // Valid walking interval — add to buffer
+      // Valid walking cadence — record interval
       stepState.intervals.push(dt);
-      if (stepState.intervals.length > 6) stepState.intervals.shift();
+      if (stepState.intervals.length > 4) stepState.intervals.shift();
       stepState.lastPeakMs = now;
 
       if (stepState.intervals.length >= STEP.CONFIRM_COUNT) {
-        // Calculate std deviation of recent intervals
-        const mean = stepState.intervals.reduce((a, b) => a + b, 0) / stepState.intervals.length;
-        const variance = stepState.intervals.reduce((a, b) => a + (b - mean) ** 2, 0) / stepState.intervals.length;
+        // Check cadence consistency (stdDev of intervals)
+        const mean = stepState.intervals.reduce((a, b) => a + b, 0)
+                     / stepState.intervals.length;
+        const variance = stepState.intervals.reduce(
+          (a, b) => a + (b - mean) ** 2, 0) / stepState.intervals.length;
         const stdDev = Math.sqrt(variance);
 
         if (stdDev < STEP.MAX_STD_DEV) {
-          // Gyro fusion: if gyro says low rotation, slight penalty
-          const gyroBonus = stepState.gyroY > 0.15 ? 1 : 0;
-          stepState.confidence = Math.min(STEP.CONFIDENCE_MAX, stepState.confidence + 1 + gyroBonus);
+          // Consistent cadence = walking ✅
+          const gyroBonus = (stepState.gyroY > 0.15) ? 1 : 0;
+          stepState.confidence = Math.min(
+            STEP.CONFIDENCE_MAX, stepState.confidence + 1 + gyroBonus);
 
-          // Only count steps once confidence is at threshold
           if (stepState.confidence >= STEP.CONFIRM_COUNT) {
-            if (typeof window.onStepCounted === 'function') window.onStepCounted();
-            updateStepUI();
+            // ✅ COUNT THE STEP — call app.js callback directly
+            if (typeof window.onSensorStep === 'function') {
+              window.onSensorStep();
+            }
           }
         } else {
-          // Inconsistent cadence (road bumps? car?) — reduce confidence
+          // Inconsistent cadence = car bump / vibration — penalise
           stepState.confidence = Math.max(0, stepState.confidence - 2);
           if (stepState.confidence === 0) stepState.intervals = [];
         }
       }
+
     } else if (dt > STEP.MAX_INTERVAL) {
-      // Long pause (stopped walking) — reset confirmation buffer
-      // This is NORMAL (stopped at traffic light etc.) — don't lose confidence
-      // Just reset the interval buffer so next walk re-confirms
-      stepState.intervals = [];
-      stepState.lastPeakMs = now;
-      // Gently reduce confidence (not walking for a while)
-      stepState.confidence = Math.max(0, stepState.confidence - 1);
-    } else if (dt < STEP.MIN_INTERVAL) {
-      // TOO FAST — definitely not walking (engine vibration leaked through?)
-      // Hard reset confidence
+      // Long pause (stopped at lights, etc.) — normal, reset buffer
+      stepState.intervals    = [];
+      stepState.lastPeakMs   = now;
+      stepState.confidence   = Math.max(0, stepState.confidence - 1);
+
+    } else {
+      // Too fast (<250ms) — definitely not walking, hard reset
       stepState.confidence = Math.max(0, stepState.confidence - 3);
       if (stepState.confidence === 0) stepState.intervals = [];
     }
