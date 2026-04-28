@@ -46,10 +46,10 @@ const BloomSensors = (() => {
   const STEP = {
     MIN_INTERVAL:   290,   // ms  — max 3.4 steps/sec (fast run)
     MAX_INTERVAL:   820,   // ms  — min 1.2 steps/sec (very slow walk)
-    PEAK_THRESH:    0.8,   // m/s² — post-filter amplitude is 0.5-1.2 m/s²
-    CONFIRM_COUNT:  5,     // consecutive valid intervals required
-    MAX_STD_DEV:    80,    // ms  — cadence must be THIS consistent
-    CONFIDENCE_MAX: 8,     // max confidence score
+    PEAK_THRESH:    0.6,   // m/s² — post dual-IIR amplitude is ~0.3–0.9 m/s²
+    CONFIRM_COUNT:  3,     // consecutive valid intervals required (was 5, too strict)
+    MAX_STD_DEV:    150,   // ms  — natural walking variation is up to 120ms (was 80, too strict)
+    CONFIDENCE_MAX: 6,     // max confidence score
     HP_BETA:        0.90,  // high-pass IIR coefficient
     LP_ALPHA:       0.25,  // low-pass IIR coefficient
   };
@@ -89,17 +89,18 @@ const BloomSensors = (() => {
 
     const now = Date.now();
 
-    // ── Peak detection: upward threshold crossing ─────────────
-    // Detects when filtered signal RISES FROM below threshold TO above it.
+    // ── Peak detection: UPWARD THRESHOLD CROSSING ────────────
+    // Fires when the filtered signal rises FROM below threshold TO above it.
     //
-    // WHY NOT zero-crossing + amplitude check:
-    //   The old code: (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
-    //   is broken — at a zero-crossing lp ≈ 0, so lp > 0.8 is never true.
+    // THE OLD BUG (zero-crossing + amplitude):
+    //   (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
+    //   When lp crosses zero, lp ≈ 0 — so lp > 0.6 is NEVER true
+    //   at the same instant. isPeak was always false. Zero steps counted.
     //
-    // Upward threshold crossing is correct:
-    //   Each walking step pushes the filtered signal above the threshold once.
-    //   Detecting the rising edge (prev below, now above) fires exactly once
-    //   per step peak — clean, reliable, no false triggers.
+    // THE FIX (upward threshold crossing):
+    //   Each walking step pushes the filtered signal above PEAK_THRESH once.
+    //   We detect the rising edge: prev was below, now above.
+    //   This fires exactly ONCE per step peak — clean and reliable.
     const isPeak = (stepState.prevLp < STEP.PEAK_THRESH && lp >= STEP.PEAK_THRESH);
     stepState.prevLp = lp;
 
