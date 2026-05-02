@@ -1,97 +1,69 @@
 // ═══════════════════════════════════════════════════════════════
-// BLOOM WELLNESS — Sensor Management Module
+// BLOOM WELLNESS — Sensor Management Module v3
 // ═══════════════════════════════════════════════════════════════
 // Sensors handled:
-//   1. Accelerometer  → Improved step counter (vehicle-resistant)
-//   2. Gyroscope       → Posture & motion quality
+//   1. Accelerometer  → Step counter (dual-IIR, vehicle-resistant, FIXED)
+//   2. Gyroscope       → Step confidence fusion
 //   3. GPS             → Walk route & accurate distance
-//   4. Battery Status  → Wellness tips, screen time
+//   4. Battery Status  → Wellness tips
 //   5. Ambient Light   → Eye health alerts
 //   6. Camera rPPG     → Heart rate estimation
-//   7. Vibration       → Haptic feedback (output only)
+//   7. Vibration       → Haptic feedback
+//   8. Network Speed   → Real-time Mbps via Cloudflare
 // ═══════════════════════════════════════════════════════════════
 
 const BloomSensors = (() => {
 
-  // ── Step counter state ─────────────────────────────────────
-  // IMPROVED ALGORITHM — Vehicle Vibration Resistant
-  // ─────────────────────────────────────────────────────────
-  // Key insight: Walking produces a PERIODIC signal at 1.5–2.5 Hz
-  // with CONSISTENT cadence (σ < 80ms over 5 steps).
+  // ─────────────────────────────────────────────────────────────
+  // STEP COUNTER — FIXED ALGORITHM
+  // ─────────────────────────────────────────────────────────────
   //
-  // Car vibrations come from:
-  //   a) Engine: 20–80 Hz → eliminated by our low-pass filter
-  //   b) Road bumps: sporadic high-amp spikes → rejected by cadence check
-  //   c) Car acceleration: <0.5 Hz → eliminated by our high-pass filter
+  // Two-stage IIR filter cascade:
+  //   Stage 1 HIGH-PASS  y[n] = β*(y[n-1] + x[n] - x[n-1])   β=0.90
+  //     → removes gravity DC (~9.81 m/s²) and slow car sway (<0.5 Hz)
+  //   Stage 2 LOW-PASS   y[n] = α*x[n] + (1-α)*y[n-1]         α=0.50
+  //     → removes high-freq engine vibrations (>~8 Hz)
+  //     → α=0.50 preserves walking signal amplitude (was 0.25, too aggressive)
   //
-  // Two-stage IIR filter cascade (isolates 0.5–5 Hz walking band):
-  //   Stage 1 HIGH-PASS  y[n] = β*(y[n-1] + x[n] - x[n-1])  β=0.9
-  //     → removes gravity (DC component ~9.81 m/s²)
-  //     → removes slow car acceleration (<0.5 Hz)
-  //   Stage 2 LOW-PASS   y[n] = α*x[n] + (1-α)*y[n-1]      α=0.25
-  //     → removes high-freq engine vibrations (>~6 Hz)
+  // Peak detection — UPWARD THRESHOLD CROSSING:
+  //   Fires when filtered signal rises FROM below PEAK_THRESH TO above it.
   //
-  // Cadence validation (CRITICAL for car rejection):
-  //   - Collect last 6 inter-peak intervals
-  //   - REQUIRE: all intervals in [290, 820] ms (walking range)
-  //   - REQUIRE: σ(intervals) < 80 ms (walking is rhythmic)
-  //   - REQUIRE: 5 consecutive valid intervals before counting starts
-  //   - Walking confidence score: builds slowly, drops instantly on violation
+  //   ❌ OLD BUG (zero-crossing + amplitude check):
+  //      isPeak = (prevLp < 0 && lp >= 0 && lp > 1.8)
+  //      At zero-crossing lp ≈ 0. So lp > 1.8 can NEVER be true
+  //      at that instant. isPeak was ALWAYS false. Zero steps counted.
   //
-  // Gyroscope fusion (if available):
-  //   - Walking produces rhythmic lateral rotation (γ ~0.3–1.0 rad/s)
-  //   - Car motion produces sustained low-amp rotation → adds confidence penalty
-  // ─────────────────────────────────────────────────────────
-
-  // ─────────────────────────────────────────────────────────
-  // STEP COUNTER — FIXED & WORKING VERSION
-  // ─────────────────────────────────────────────────────────
-  // ROOT CAUSE OF ORIGINAL BUG:
-  //   isPeak = (prevLp < 0 && lp >= 0 && lp > 1.8)
-  //   → At a zero-crossing, lp ≈ 0. So lp > 1.8 is NEVER true.
-  //   → isPeak was ALWAYS false. Zero steps ever counted.
+  //   ✅ FIX (upward threshold crossing):
+  //      isPeak = (prevLp < PEAK_THRESH && lp >= PEAK_THRESH)
+  //      Each step pushes lp above 0.5 exactly once — one detection per step.
   //
-  // ALSO: PEAK_THRESH of 1.8 m/s² is above the maximum possible
-  //   amplitude after the dual IIR filter cascade. Post-filter
-  //   walking amplitude is typically 0.5–1.5 m/s².
-  //
-  // ALSO: LP_ALPHA of 0.25 heavily damps the signal. Using 0.5
-  //   preserves more of the walking waveform through the filter.
-  //
-  // ALSO: CONFIRM_COUNT=5 applied twice (buffer length + confidence)
-  //   meant you needed ~10 valid steps before ANY were counted.
-  //
-  // FIXES APPLIED:
-  //   1. LP_ALPHA: 0.25 → 0.5   (more signal passes through)
-  //   2. PEAK_THRESH: 1.8 → 0.5 (correct for post-filter amplitude)
-  //   3. isPeak: zero-crossing check → upward threshold crossing
-  //   4. CONFIRM_COUNT: 5 → 2   (start counting much sooner)
-  //   5. MAX_STD_DEV: 80 → 200  (natural walking variance is 80–150ms)
-  //   6. MIN_INTERVAL: 290 → 250 (handles fast walkers better)
-  //   7. MAX_INTERVAL: 820 → 1500 (handles slow walkers better)
-  //   8. Step callback: call window.onSensorStep directly, no indirection
-  // ─────────────────────────────────────────────────────────
+  // Cadence validation:
+  //   - Collect last 4 inter-peak intervals
+  //   - Require interval in [250, 1500] ms (0.67–4 steps/sec)
+  //   - Require σ(intervals) < 200 ms (walking is rhythmic)
+  //   - Require 2 consecutive valid intervals before counting starts
+  //   - Gyroscope fusion: walking swings body → adds +1 confidence
+  // ─────────────────────────────────────────────────────────────
 
   const STEP = {
-    MIN_INTERVAL:   250,   // ms — max ~4 steps/sec
-    MAX_INTERVAL:   1500,  // ms — min ~0.7 steps/sec (very slow stroll)
-    PEAK_THRESH:    0.5,   // m/s² — correct for post dual-IIR amplitude
-    CONFIRM_COUNT:  2,     // need 2 valid intervals before counting starts
-    MAX_STD_DEV:    200,   // ms — natural walking variation is 80–150ms
-    CONFIDENCE_MAX: 4,     // max confidence score
-    HP_BETA:        0.90,  // high-pass IIR coefficient (removes gravity)
-    LP_ALPHA:       0.50,  // low-pass IIR coefficient (was 0.25 — too aggressive)
+    MIN_INTERVAL:   250,    // ms — max ~4 steps/sec
+    MAX_INTERVAL:   1500,   // ms — min ~0.7 steps/sec (very slow stroll)
+    PEAK_THRESH:    0.5,    // m/s² — correct for post dual-IIR amplitude (0.3–1.5 m/s²)
+    CONFIRM_COUNT:  2,      // consecutive valid intervals before counting
+    MAX_STD_DEV:    200,    // ms — natural walking variance is 80–150 ms
+    CONFIDENCE_MAX: 4,      // max confidence score
+    HP_BETA:        0.90,   // high-pass IIR coefficient
+    LP_ALPHA:       0.50,   // low-pass IIR coefficient (was 0.25 — kills signal)
   };
 
   let stepState = {
     on:            false,
     motionHandler: null,
-    gyroHandler:   null,
     // Filter state
     rawPrev:       0,
     hpPrev:        0,
     lpPrev:        0,
-    // Peak detection state
+    // Peak detection
     prevLp:        0,
     lastPeakMs:    0,
     // Cadence validation
@@ -107,32 +79,20 @@ const BloomSensors = (() => {
     const x = ag.x || 0, y = ag.y || 0, z = ag.z || 0;
     const raw = Math.sqrt(x * x + y * y + z * z);
 
-    // ── Stage 1: High-pass filter ────────────────────────────
-    // Removes gravity (DC ~9.81 m/s²) and slow car sway (<0.5 Hz)
+    // ── Stage 1: High-pass filter ─────────────────────────────
     const hp = STEP.HP_BETA * (stepState.hpPrev + raw - stepState.rawPrev);
     stepState.rawPrev = raw;
     stepState.hpPrev  = hp;
 
-    // ── Stage 2: Low-pass filter ─────────────────────────────
-    // Smooths out high-frequency engine noise (>~8 Hz)
-    // LP_ALPHA=0.5 lets walking signal (2 Hz) pass through well
+    // ── Stage 2: Low-pass filter ──────────────────────────────
     const lp = STEP.LP_ALPHA * hp + (1 - STEP.LP_ALPHA) * stepState.lpPrev;
     stepState.lpPrev = lp;
 
     const now = Date.now();
 
-    // ── Peak detection: UPWARD THRESHOLD CROSSING ────────────
-    // Fires when lp rises FROM below PEAK_THRESH TO above it.
-    //
-    // WHY THE ORIGINAL WAS BROKEN:
-    //   Old: (prevLp < 0 && lp >= 0 && lp > PEAK_THRESH)
-    //   At a zero crossing, lp ≈ 0, so lp > 0.5 can't be true
-    //   at the same instant. isPeak was always false.
-    //
-    // THE FIX — rising edge on the threshold:
-    //   Each step pushes the filtered signal above PEAK_THRESH once.
-    //   Detecting prev<threshold and now>=threshold fires exactly
-    //   once per step peak.
+    // ── Peak detection: UPWARD THRESHOLD CROSSING ─────────────
+    // Fires the moment lp rises from below PEAK_THRESH to above it.
+    // This is the critical fix — the old zero-crossing code was broken.
     const isPeak = (stepState.prevLp < STEP.PEAK_THRESH && lp >= STEP.PEAK_THRESH);
     stepState.prevLp = lp;
 
@@ -140,67 +100,69 @@ const BloomSensors = (() => {
 
     const dt = now - stepState.lastPeakMs;
 
-    // ── Cadence validation ───────────────────────────────────
+    // ── Cadence validation ────────────────────────────────────
     if (dt >= STEP.MIN_INTERVAL && dt <= STEP.MAX_INTERVAL) {
-      // Valid walking cadence — record interval
       stepState.intervals.push(dt);
       if (stepState.intervals.length > 4) stepState.intervals.shift();
       stepState.lastPeakMs = now;
 
       if (stepState.intervals.length >= STEP.CONFIRM_COUNT) {
-        // Check cadence consistency (stdDev of intervals)
-        const mean = stepState.intervals.reduce((a, b) => a + b, 0)
-                     / stepState.intervals.length;
-        const variance = stepState.intervals.reduce(
-          (a, b) => a + (b - mean) ** 2, 0) / stepState.intervals.length;
-        const stdDev = Math.sqrt(variance);
+        const mean     = stepState.intervals.reduce((a, b) => a + b, 0) / stepState.intervals.length;
+        const variance = stepState.intervals.reduce((a, b) => a + (b - mean) ** 2, 0) / stepState.intervals.length;
+        const stdDev   = Math.sqrt(variance);
 
         if (stdDev < STEP.MAX_STD_DEV) {
           // Consistent cadence = walking ✅
-          const gyroBonus = (stepState.gyroY > 0.15) ? 1 : 0;
-          stepState.confidence = Math.min(
-            STEP.CONFIDENCE_MAX, stepState.confidence + 1 + gyroBonus);
+          const gyroBonus = stepState.gyroY > 0.15 ? 1 : 0;
+          stepState.confidence = Math.min(STEP.CONFIDENCE_MAX, stepState.confidence + 1 + gyroBonus);
 
           if (stepState.confidence >= STEP.CONFIRM_COUNT) {
-            // ✅ COUNT THE STEP — call app.js callback directly
-            if (typeof window.onSensorStep === 'function') {
-              window.onSensorStep();
-            }
+            // ✅ COUNT THE STEP
+            if (typeof window.onSensorStep === 'function') window.onSensorStep();
+            // Also notify SW for background tracking
+            _notifySWStep();
           }
         } else {
-          // Inconsistent cadence = car bump / vibration — penalise
+          // Erratic cadence — car bump or vibration
           stepState.confidence = Math.max(0, stepState.confidence - 2);
           if (stepState.confidence === 0) stepState.intervals = [];
         }
       }
 
     } else if (dt > STEP.MAX_INTERVAL) {
-      // Long pause (stopped at lights, etc.) — normal, reset buffer
+      // Normal pause (stopped at lights, etc.) — reset buffer
       stepState.intervals    = [];
       stepState.lastPeakMs   = now;
       stepState.confidence   = Math.max(0, stepState.confidence - 1);
 
     } else {
-      // Too fast (<250ms) — definitely not walking, hard reset
+      // Too fast (<250ms) — engine vibration, hard reset
       stepState.confidence = Math.max(0, stepState.confidence - 3);
       if (stepState.confidence === 0) stepState.intervals = [];
     }
   }
 
-  // Gyroscope data — used for step confidence fusion
+  // Gyroscope fusion — part of DeviceMotionEvent
   function processGyro(e) {
-    // DeviceMotionEvent provides rotationRate
     if (!e.rotationRate) return;
     const gamma = Math.abs(e.rotationRate.gamma || 0);
     const beta  = Math.abs(e.rotationRate.beta  || 0);
-    // Combine lateral + forward rotation — walking swings arms/body
-    stepState.gyroY = Math.max(gamma, beta) * (Math.PI / 180); // deg/s → rad/s
+    stepState.gyroY = Math.max(gamma, beta) * (Math.PI / 180);
+  }
+
+  // ── Notify SW of each step (for background tracking) ─────────
+  function _notifySWStep() {
+    try {
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'STEP' });
+      }
+    } catch (e) {}
   }
 
   async function startSteps() {
     if (stepState.on) return { ok: false, msg: 'Already running' };
 
-    // iOS 13+ needs permission
+    // iOS 13+ needs explicit permission
     if (typeof DeviceMotionEvent !== 'undefined' &&
         typeof DeviceMotionEvent.requestPermission === 'function') {
       try {
@@ -213,24 +175,28 @@ const BloomSensors = (() => {
       return { ok: false, msg: 'Motion sensor not available on this device' };
     }
 
-    stepState.motionHandler = processMotion;
-    stepState.gyroHandler   = processGyro;
-    window.addEventListener('devicemotion', stepState.motionHandler, { passive: true });
-    // Gyro is part of devicemotion event too
-    stepState.on = true;
-
-    // Reset filter state on start
+    // Reset filter state
     Object.assign(stepState, {
       rawPrev: 0, hpPrev: 0, lpPrev: 0, prevLp: 0,
       lastPeakMs: 0, intervals: [], confidence: 0, gyroY: 0,
     });
 
+    stepState.motionHandler = (e) => {
+      processMotion(e);
+      processGyro(e);
+    };
+
+    window.addEventListener('devicemotion', stepState.motionHandler, { passive: true });
+    stepState.on = true;
+
     return { ok: true };
   }
 
   function stopSteps() {
-    if (stepState.motionHandler) window.removeEventListener('devicemotion', stepState.motionHandler);
-    stepState.on = false;
+    if (stepState.motionHandler) {
+      window.removeEventListener('devicemotion', stepState.motionHandler);
+    }
+    stepState.on         = false;
     stepState.confidence = 0;
     stepState.intervals  = [];
   }
@@ -239,439 +205,351 @@ const BloomSensors = (() => {
     return Math.round((stepState.confidence / STEP.CONFIDENCE_MAX) * 100);
   }
 
-  function updateStepUI() {
-    // Called by app.js via window hook
-    if (typeof window.onSensorStep === 'function') window.onSensorStep();
-  }
-
-  // ── GPS / Location Tracking ────────────────────────────────
+  // ── GPS / Location Tracking ───────────────────────────────────
   let gpsState = {
-    on: false,
-    watchId: null,
-    positions: [],
+    on:             false,
+    watchId:        null,
+    positions:      [],
     totalDistanceM: 0,
-    lastPos: null,
-    startTime: null,
+    lastPos:        null,
+    startTime:      null,
   };
 
   function haversineM(lat1, lon1, lat2, lon2) {
-    const R = 6371000;
+    const R    = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) ** 2;
+    const a    = Math.sin(dLat / 2) ** 2 +
+                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                 Math.sin(dLon / 2) ** 2;
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   async function startGPS() {
-    if (!navigator.geolocation) return { ok: false, msg: 'GPS not available' };
-    if (gpsState.on) return { ok: false, msg: 'Already tracking' };
+    if (gpsState.on) return { ok: false, msg: 'Already running' };
+    if (!navigator.geolocation) return { ok: false, msg: 'Geolocation not supported' };
+
+    gpsState.totalDistanceM = 0;
+    gpsState.lastPos        = null;
+    gpsState.startTime      = Date.now();
+    gpsState.positions      = [];
 
     return new Promise(resolve => {
       gpsState.watchId = navigator.geolocation.watchPosition(
         pos => {
           const { latitude: lat, longitude: lon, accuracy } = pos.coords;
-          if (accuracy > 50) return; // skip inaccurate readings
+          if (accuracy > 50) return; // ignore low-accuracy fixes
 
           if (gpsState.lastPos) {
-            const d = haversineM(gpsState.lastPos.lat, gpsState.lastPos.lon, lat, lon);
-            if (d > 2 && d < 200) { // filter teleports & stationary noise
-              gpsState.totalDistanceM += d;
-              gpsState.positions.push({ lat, lon, t: Date.now() });
-              if (typeof window.onGPSUpdate === 'function') window.onGPSUpdate(getGPSData());
+            const dist = haversineM(gpsState.lastPos.lat, gpsState.lastPos.lon, lat, lon);
+            // Filter: ignore if < 2m (noise) or > 200m (teleport)
+            if (dist >= 2 && dist < 200) {
+              gpsState.totalDistanceM += dist;
             }
-          } else {
-            gpsState.startTime = Date.now();
-            gpsState.positions.push({ lat, lon, t: Date.now() });
-            resolve({ ok: true });
           }
           gpsState.lastPos = { lat, lon };
+          gpsState.positions.push({ lat, lon, t: Date.now() });
+
+          if (!gpsState.on) { gpsState.on = true; resolve({ ok: true }); }
+
+          if (typeof window.onGPSUpdate === 'function') {
+            const km         = (gpsState.totalDistanceM / 1000).toFixed(2);
+            const elapsedMin = Math.round((Date.now() - gpsState.startTime) / 60000);
+            const pace       = (gpsState.totalDistanceM > 100 && elapsedMin > 0)
+              ? (elapsedMin / (gpsState.totalDistanceM / 1000)).toFixed(1) + ' min/km'
+              : '—';
+            window.onGPSUpdate({ km, pace, elapsedMin });
+          }
         },
         err => {
-          resolve({ ok: false, msg: err.message });
+          if (!gpsState.on) resolve({ ok: false, msg: err.message });
         },
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
       );
-      gpsState.on = true;
-      setTimeout(() => resolve({ ok: true }), 500);
+      // Timeout if no fix in 10 seconds
+      setTimeout(() => { if (!gpsState.on) resolve({ ok: false, msg: 'GPS timeout — are you outdoors?' }); }, 11000);
     });
   }
 
   function stopGPS() {
-    if (gpsState.watchId !== null) {
-      navigator.geolocation.clearWatch(gpsState.watchId);
-      gpsState.watchId = null;
-    }
-    gpsState.on = false;
-  }
-
-  function getGPSData() {
-    const km  = (gpsState.totalDistanceM / 1000).toFixed(2);
-    const elapsed = gpsState.startTime ? Math.floor((Date.now() - gpsState.startTime) / 60000) : 0;
-    const pace = elapsed > 0 && gpsState.totalDistanceM > 100
-      ? (elapsed / (gpsState.totalDistanceM / 1000)).toFixed(1)
-      : '--';
-    return {
-      km,
-      distanceM: Math.round(gpsState.totalDistanceM),
-      elapsedMin: elapsed,
-      pace, // min/km
-      positions: gpsState.positions,
-      on: gpsState.on,
-    };
+    if (gpsState.watchId !== null) navigator.geolocation.clearWatch(gpsState.watchId);
+    gpsState.on      = false;
+    gpsState.watchId = null;
   }
 
   function resetGPS() {
     stopGPS();
-    gpsState.positions = [];
     gpsState.totalDistanceM = 0;
-    gpsState.lastPos = null;
-    gpsState.startTime = null;
+    gpsState.lastPos        = null;
+    gpsState.startTime      = null;
+    gpsState.positions      = [];
   }
 
-  // ── Battery Status ─────────────────────────────────────────
-  let batteryState = { level: null, charging: false, supported: false };
+  function getGPSData() {
+    return {
+      km:         (gpsState.totalDistanceM / 1000).toFixed(2),
+      elapsedMin: gpsState.startTime
+        ? Math.round((Date.now() - gpsState.startTime) / 60000)
+        : 0,
+    };
+  }
+
+  // ── Battery ───────────────────────────────────────────────────
+  let batteryState = { supported: false, level: 0, charging: false };
 
   async function initBattery() {
-    if (!('getBattery' in navigator)) {
+    if (!navigator.getBattery) {
       batteryState.supported = false;
-      return batteryState;
+      return;
     }
     try {
       const bat = await navigator.getBattery();
       const update = () => {
         batteryState = {
           supported: true,
-          level: Math.round(bat.level * 100),
-          charging: bat.charging,
-          chargingTime: bat.chargingTime,
-          dischargingTime: bat.dischargingTime,
+          level:     Math.round(bat.level * 100),
+          charging:  bat.charging,
         };
         if (typeof window.onBatteryUpdate === 'function') window.onBatteryUpdate(batteryState);
       };
-      bat.addEventListener('levelchange',    update);
-      bat.addEventListener('chargingchange', update);
       update();
+      bat.addEventListener('levelchange',   update);
+      bat.addEventListener('chargingchange', update);
     } catch (e) {
       batteryState.supported = false;
     }
-    return batteryState;
   }
 
-  // ── Ambient Light Sensor ───────────────────────────────────
-  let lightState = { level: null, supported: false, sensor: null };
+  // ── Ambient Light ─────────────────────────────────────────────
+  let lightState = { supported: false, level: 0 };
 
   function initAmbientLight() {
     if (!('AmbientLightSensor' in window)) {
       lightState.supported = false;
-      return false;
+      if (typeof window.onLightUpdate === 'function')
+        window.onLightUpdate({ supported: false, level: 0 });
+      return;
     }
     try {
-      const sensor = new AmbientLightSensor({ frequency: 1 });
+      const sensor = new AmbientLightSensor();
       sensor.addEventListener('reading', () => {
-        lightState.level = Math.round(sensor.illuminance);
-        lightState.supported = true;
+        lightState = { supported: true, level: Math.round(sensor.illuminance) };
         if (typeof window.onLightUpdate === 'function') window.onLightUpdate(lightState);
       });
       sensor.addEventListener('error', () => { lightState.supported = false; });
       sensor.start();
-      lightState.sensor = sensor;
-      lightState.supported = true;
-      return true;
     } catch (e) {
       lightState.supported = false;
-      return false;
     }
   }
 
   function getLightAdvice(lux) {
-    if (lux === null) return { emoji: '💡', text: 'Not available', color: 'var(--tsoft)' };
-    if (lux < 50)   return { emoji: '🌙', text: 'Very dim — rest your eyes, avoid screens', color: '#a855f7' };
-    if (lux < 200)  return { emoji: '🕯️', text: 'Low light — consider a reading lamp', color: '#38bdf8' };
-    if (lux < 1000) return { emoji: '✅', text: 'Good indoor lighting', color: '#34d399' };
-    if (lux < 5000) return { emoji: '🌤', text: 'Bright indoors or overcast outdoor', color: '#fbbf24' };
-    return { emoji: '☀️', text: 'Bright sunlight — protect your eyes outdoors', color: '#f97316' };
+    if (lux < 50)   return { emoji: '🌙', text: 'Very dim — rest your eyes, avoid screens' };
+    if (lux < 200)  return { emoji: '🕯️', text: 'Low light — consider a reading lamp' };
+    if (lux < 1000) return { emoji: '✅', text: 'Good indoor lighting' };
+    if (lux < 5000) return { emoji: '🌤', text: 'Bright indoor or overcast outdoor' };
+    return             { emoji: '☀️', text: 'Bright sunlight — protect your eyes' };
   }
 
-  // ── Camera Heart Rate (rPPG) ───────────────────────────────
-  // Place finger over rear camera + flashlight → detect blood-flow color changes
+  // ── Heart Rate (Camera rPPG) ───────────────────────────────────
   let hrState = {
-    on: false, stream: null,
-    samples: [], intervalId: null,
-    bpm: 0, quality: 0,
-    canvas: null, ctx: null, video: null,
+    on:         false,
+    stream:     null,
+    video:      null,
+    canvas:     null,
+    ctx:        null,
+    intervalId: null,
+    samples:    [],
+    bpm:        0,
+    quality:    0,
   };
 
   async function startHeartRate() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
-      return { ok: false, msg: 'Camera not available' };
+    if (hrState.on) return { ok: false, msg: 'Already running' };
+    if (!navigator.mediaDevices?.getUserMedia)
+      return { ok: false, msg: 'Camera API not supported' };
 
     try {
-      // Request rear camera with torch
-      const constraints = {
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 64 },
-          height: { ideal: 64 },
-          frameRate: { ideal: 30 },
-          advanced: [{ torch: true }],
-        }
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      hrState.stream = stream;
-      hrState.on = true;
-      hrState.samples = [];
-      hrState.bpm = 0;
-
-      // Set up off-screen canvas for frame sampling
-      if (!hrState.canvas) {
-        hrState.canvas = document.createElement('canvas');
-        hrState.canvas.width = 8;
-        hrState.canvas.height = 8;
-        hrState.ctx = hrState.canvas.getContext('2d');
-      }
-      if (!hrState.video) {
-        hrState.video = document.createElement('video');
-        hrState.video.playsInline = true;
-        hrState.video.muted = true;
-      }
-      hrState.video.srcObject = stream;
-      await hrState.video.play();
-
-      // Sample red channel at 30fps
-      hrState.intervalId = setInterval(() => sampleFrame(), 33);
-      return { ok: true };
+      hrState.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: 160, height: 120 },
+      });
     } catch (e) {
-      return { ok: false, msg: e.message };
+      return { ok: false, msg: e.name === 'NotAllowedError'
+        ? 'Camera permission denied — tap Allow'
+        : 'Camera error: ' + e.message };
     }
-  }
 
-  function sampleFrame() {
-    if (!hrState.video || !hrState.ctx) return;
-    hrState.ctx.drawImage(hrState.video, 0, 0, 8, 8);
-    const data = hrState.ctx.getImageData(0, 0, 8, 8).data;
-    // Average red channel across all pixels
-    let rSum = 0, count = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      rSum += data[i];
-      count++;
-    }
-    const rAvg = rSum / count;
-    hrState.samples.push({ r: rAvg, t: Date.now() });
+    hrState.video  = document.createElement('video');
+    hrState.canvas = document.createElement('canvas');
+    hrState.ctx    = hrState.canvas.getContext('2d', { willReadFrequently: true });
+    hrState.canvas.width  = 40;
+    hrState.canvas.height = 30;
+    hrState.video.srcObject = hrState.stream;
+    hrState.video.playsInline = true;
+    await hrState.video.play();
+    hrState.on      = true;
+    hrState.samples = [];
+    hrState.bpm     = 0;
 
-    // Keep 10 seconds of samples at 30fps = 300 samples
-    if (hrState.samples.length > 300) hrState.samples.shift();
+    hrState.intervalId = setInterval(() => {
+      if (!hrState.on || !hrState.video) return;
+      hrState.ctx.drawImage(hrState.video, 0, 0, 40, 30);
+      const px    = hrState.ctx.getImageData(0, 0, 40, 30).data;
+      let rSum = 0, count = 0;
+      for (let i = 0; i < px.length; i += 4) { rSum += px[i]; count++; }
+      const rAvg = rSum / count;
+      hrState.samples.push({ r: rAvg, t: Date.now() });
+      if (hrState.samples.length > 300) hrState.samples.shift();
+      if (hrState.samples.length >= 150) calculateHR();
+    }, 1000 / 30); // 30 fps
 
-    // Calculate BPM once we have 5+ seconds (150 samples)
-    if (hrState.samples.length >= 150) {
-      calculateHR();
-    }
+    return { ok: true };
   }
 
   function calculateHR() {
-    // Simple peak-detection on red channel signal
-    // Red channel is highest when blood is present (fingertip over camera)
-    const vals = hrState.samples.map(s => s.r);
-    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
-    const std  = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
+    const vals      = hrState.samples.map(s => s.r);
+    const mean      = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const std       = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
+    hrState.quality = Math.min(100, Math.round((std / 5) * 100));
 
-    hrState.quality = Math.min(100, Math.round((std / 5) * 100)); // signal quality
-
-    // Find peaks above mean + 0.3*std
     const threshold = mean + 0.3 * std;
-    const peaks = [];
+    const peaks     = [];
     let prevV = vals[0];
     for (let i = 1; i < vals.length - 1; i++) {
       const v = vals[i];
       if (v > threshold && v >= vals[i - 1] && v >= vals[i + 1] && prevV < v) {
-        // Check min interval (200ms = 300bpm max)
         const t = hrState.samples[i].t;
-        if (peaks.length === 0 || t - peaks[peaks.length - 1] > 200) {
+        if (peaks.length === 0 || t - peaks[peaks.length - 1] > 200)
           peaks.push(t);
-        }
       }
       prevV = v;
     }
-
     if (peaks.length >= 3) {
-      const diffs = [];
+      const diffs      = [];
       for (let i = 1; i < peaks.length; i++) diffs.push(peaks[i] - peaks[i - 1]);
       const avgInterval = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-      const bpm = Math.round(60000 / avgInterval);
-      // Sanity check: 40-200 BPM
+      const bpm         = Math.round(60000 / avgInterval);
       if (bpm >= 40 && bpm <= 200) {
         hrState.bpm = bpm;
-        if (typeof window.onHRUpdate === 'function') window.onHRUpdate({ bpm, quality: hrState.quality });
+        if (typeof window.onHRUpdate === 'function')
+          window.onHRUpdate({ bpm, quality: hrState.quality });
       }
     }
   }
 
   function stopHeartRate() {
     if (hrState.intervalId) { clearInterval(hrState.intervalId); hrState.intervalId = null; }
-    if (hrState.stream) {
-      hrState.stream.getTracks().forEach(t => t.stop());
-      hrState.stream = null;
-    }
-    if (hrState.video) { hrState.video.srcObject = null; }
-    hrState.on = false;
-    hrState.samples = [];
-    hrState.bpm = 0;
+    if (hrState.stream) { hrState.stream.getTracks().forEach(t => t.stop()); hrState.stream = null; }
+    if (hrState.video)  { hrState.video.srcObject = null; }
+    hrState.on = false; hrState.samples = []; hrState.bpm = 0;
   }
 
-  // ── Haptic / Vibration (output only) ──────────────────────
-  function vibrate(pattern) {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(pattern || [100]);
-    }
-  }
+  // ── Haptics ───────────────────────────────────────────────────
+  function vibrate(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern || [100]); }
+  function milestoneBuzz() { vibrate([150, 80, 150, 80, 300]); }
+  function successBuzz()   { vibrate([100, 50, 100]); }
+  function tapBuzz()       { vibrate([30]); }
 
-  function milestoneBuzz()  { vibrate([150, 80, 150, 80, 300]); }
-  function successBuzz()    { vibrate([100, 50, 100]); }
-  function tapBuzz()        { vibrate([30]); }
-
-  // ── Network Speed Monitor ──────────────────────────────────
-  // Real-time download speed test using Cloudflare's speed test
-  // endpoint — fully CORS-enabled, works on ALL mobile browsers
-  // with zero setup. Falls back to navigator.connection estimate.
-  //
-  // HOW IT WORKS:
-  //   1. Downloads 50 KB from speed.cloudflare.com (CORS-open)
-  //   2. Measures exact bytes / time = real download Mbps
-  //   3. Repeats every 5 seconds while running
-  //   4. Falls back to navigator.connection.downlink if fetch fails
-  // ─────────────────────────────────────────────────────────
-
+  // ── Network Speed Monitor ─────────────────────────────────────
   const NET_TEST_URL   = 'https://speed.cloudflare.com/__down?bytes=50000';
-  const NET_TEST_BYTES = 50000; // 50 KB per test — fast enough for quick result
+  const NET_TEST_BYTES = 50000;
 
   const netState = {
-    on:        false,
-    testing:   false,
-    intervalId: null,
+    on:          false,
+    testing:     false,
+    intervalId:  null,
     currentMbps: null,
-    history:   [],   // last 10 { mbps, label } entries
+    history:     [],
   };
 
   async function _doSpeedTest() {
     if (netState.testing) return null;
     netState.testing = true;
     try {
-      const t0 = performance.now();
-      const resp = await fetch(NET_TEST_URL + '&_=' + Date.now(), {
-        cache: 'no-store',
-        mode:  'cors',
-      });
+      const t0   = performance.now();
+      const resp = await fetch(NET_TEST_URL + '&_=' + Date.now(), { cache: 'no-store', mode: 'cors' });
       await resp.arrayBuffer();
       const secs = (performance.now() - t0) / 1000;
       netState.testing = false;
-      const mbps = (NET_TEST_BYTES * 8) / (secs * 1_000_000);
-      return Math.round(mbps * 100) / 100; // 2 decimal places
+      return Math.round(((NET_TEST_BYTES * 8) / (secs * 1_000_000)) * 100) / 100;
     } catch (e) {
       netState.testing = false;
-      // Fallback: navigator Network Information API estimate
       const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-      if (conn && conn.downlink) return conn.downlink;
-      return null;
+      return (conn && conn.downlink) ? conn.downlink : null;
     }
   }
 
   async function startNetSpeed() {
     if (netState.on) return;
-    netState.on       = true;
-    netState.history  = [];
-
+    netState.on      = true;
+    netState.history = [];
     const tick = async () => {
       const mbps = await _doSpeedTest();
       if (mbps !== null) {
         netState.currentMbps = mbps;
-        const label = mbps < 1
-          ? Math.round(mbps * 1000) + 'K'
-          : mbps.toFixed(1) + 'M';
+        const label = mbps < 1 ? Math.round(mbps * 1000) + 'K' : mbps.toFixed(1) + 'M';
         netState.history.push({ mbps, label });
         if (netState.history.length > 10) netState.history.shift();
       }
-      if (typeof window.onNetSpeedUpdate === 'function') {
+      if (typeof window.onNetSpeedUpdate === 'function')
         window.onNetSpeedUpdate(mbps, [...netState.history]);
-      }
     };
-
-    await tick(); // first reading immediately
+    await tick();
     netState.intervalId = setInterval(tick, 5000);
   }
 
   function stopNetSpeed() {
     if (netState.intervalId) clearInterval(netState.intervalId);
-    netState.on        = false;
-    netState.intervalId = null;
-    netState.testing   = false;
+    netState.on = false; netState.intervalId = null; netState.testing = false;
   }
 
   function getNetSpeedState() {
-    return {
-      on:          netState.on,
-      testing:     netState.testing,
-      currentMbps: netState.currentMbps,
-      history:     [...netState.history],
-    };
+    return { on: netState.on, testing: netState.testing,
+             currentMbps: netState.currentMbps, history: [...netState.history] };
   }
 
-  // ── Network Info ───────────────────────────────────────────
+  // ── Network Info ──────────────────────────────────────────────
   function getNetworkInfo() {
     const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (!conn) return null;
-    return {
-      type:       conn.effectiveType || conn.type || 'unknown',
-      downlink:   conn.downlink,
-      saveData:   conn.saveData,
-    };
+    return { type: conn.effectiveType || conn.type || 'unknown',
+             downlink: conn.downlink, saveData: conn.saveData };
   }
 
-  // ── Screen / Display ──────────────────────────────────────
+  // ── Screen Info ───────────────────────────────────────────────
   function getScreenInfo() {
-    return {
-      width:  window.screen.width,
-      height: window.screen.height,
-      dpr:    window.devicePixelRatio || 1,
-      orientation: screen.orientation ? screen.orientation.type : 'unknown',
-    };
+    return { width: window.screen.width, height: window.screen.height,
+             dpr: window.devicePixelRatio || 1,
+             orientation: screen.orientation ? screen.orientation.type : 'unknown' };
   }
 
-  // ── Public API ─────────────────────────────────────────────
+  // ── Public API ────────────────────────────────────────────────
   return {
-    // Steps
     startSteps,
     stopSteps,
     stepIsOn:         () => stepState.on,
     getStepConfidence,
-    // GPS
     startGPS,
     stopGPS,
     resetGPS,
     getGPSData,
     gpsIsOn:          () => gpsState.on,
-    // Battery
     initBattery,
     getBattery:       () => batteryState,
-    // Ambient Light
     initAmbientLight,
     getLight:         () => lightState,
     getLightAdvice,
-    // Heart Rate
     startHeartRate,
     stopHeartRate,
     getHR:            () => ({ bpm: hrState.bpm, quality: hrState.quality, on: hrState.on }),
-    // Haptics
     vibrate,
     milestoneBuzz,
     successBuzz,
     tapBuzz,
-    // Network Speed Monitor
     startNetSpeed,
     stopNetSpeed,
     getNetSpeedState,
-    netSpeedIsOn: () => netState.on,
-    // Device info
+    netSpeedIsOn:     () => netState.on,
     getNetworkInfo,
     getScreenInfo,
   };
