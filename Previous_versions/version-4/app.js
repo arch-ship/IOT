@@ -92,6 +92,11 @@ window.onSensorStep = () => {
   updateAll();
   handleStepMilestone();
   BloomSensors.tapBuzz();
+  // Post step to Service Worker for background tracking
+  // SW keeps its own IndexedDB count so steps survive tab switches
+  try {
+    if (swReg?.active) swReg.active.postMessage({ type: 'STEP' });
+  } catch (e) {}
 };
 
 window.onGPSUpdate = (data) => {
@@ -130,15 +135,101 @@ window.onHRUpdate = (data) => {
 };
 
 // ─────────────────────────────────────────
-// SERVICE WORKER
+// SERVICE WORKER + BACKGROUND STEP SYNC
 // ─────────────────────────────────────────
+//
+// HOW BACKGROUND TRACKING WORKS:
+//   1. sensors.js counts steps and calls window.onSensorStep()
+//   2. onSensorStep() increments S.steps AND posts { type:'STEP' } to the SW
+//   3. SW stores its own running total in IndexedDB
+//   4. When tab goes hidden:  we post PAGE_HIDDEN so SW starts keep-alive
+//   5. When tab comes back:   we post GET_STEPS — SW replies with its count
+//   6. We take max(S.steps, swSteps) so no steps are lost either way
+//   7. BroadcastChannel provides a second sync channel between tabs
+//
+// On Android Chrome the page can keep running when minimised as long
+// as the SW is alive and there is an active keep-alive mechanism.
+// The SW's fetch handler and periodic message loop keep it awake.
+// ─────────────────────────────────────────
+
 let swReg = null;
+let swBC  = null;  // BroadcastChannel to SW
+
 async function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
     swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-    setInterval(() => { if (swReg?.active) swReg.active.postMessage({ type: 'PING' }); }, 25000);
+
+    // Keep-alive ping every 25 seconds
+    setInterval(() => {
+      if (swReg?.active) swReg.active.postMessage({ type: 'PING' });
+    }, 25000);
+
+    // Listen for messages FROM the SW (step counts, PONG, etc.)
+    navigator.serviceWorker.addEventListener('message', onSWMessage);
+
+    // Open BroadcastChannel as second sync path
+    try {
+      swBC = new BroadcastChannel('bloom-bg-steps');
+      swBC.onmessage = (e) => {
+        if (e.data?.type === 'STEPS_FROM_SW') mergeSWSteps(e.data.steps, e.data.date);
+      };
+    } catch (e) {}
+
+    // Register for Periodic Background Sync if supported (Chrome Android PWA)
+    if ('periodicSync' in swReg) {
+      try {
+        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+        if (status.state === 'granted') {
+          await swReg.periodicSync.register('bloom-steps-sync', { minInterval: 15 * 60 * 1000 });
+        }
+      } catch (e) {}
+    }
+
+    // On first load, ask SW for its stored step count
+    syncStepsWithSW();
+
   } catch (e) { console.warn('SW registration failed:', e); }
+}
+
+// Handle messages from SW
+function onSWMessage(e) {
+  if (!e.data) return;
+  switch (e.data.type) {
+    case 'STEPS_FROM_SW':
+      mergeSWSteps(e.data.steps, e.data.date);
+      break;
+    case 'PONG':
+      // keep-alive acknowledged — no action needed
+      break;
+  }
+}
+
+// Merge SW's step count into app state — always take the maximum
+function mergeSWSteps(swSteps, swDate) {
+  if (!swSteps || typeof swSteps !== 'number') return;
+  // If SW's date is today and its count is higher, use it
+  if (swDate === today() && swSteps > S.steps) {
+    S.steps = swSteps;
+    save();
+    updateAll();
+  }
+}
+
+// Send our current steps to SW and request its count back
+function syncStepsWithSW() {
+  try {
+    if (swReg?.active) {
+      swReg.active.postMessage({ type: 'STEPS_SYNC', steps: S.steps, date: today() });
+    }
+  } catch (e) {}
+}
+
+// Called from GET_STEPS when page becomes visible again
+function requestSWStepCount() {
+  try {
+    if (swReg?.active) swReg.active.postMessage({ type: 'GET_STEPS' });
+  } catch (e) {}
 }
 
 // ─────────────────────────────────────────
@@ -1114,7 +1205,22 @@ async function init() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { checkDayReset(); updateAll(); }
+  if (document.hidden) {
+    // Tab going to background — tell SW to stay alive and sync current count
+    try {
+      if (swReg?.active) {
+        swReg.active.postMessage({ type: 'PAGE_HIDDEN' });
+        swReg.active.postMessage({ type: 'STEPS_SYNC', steps: S.steps, date: today() });
+      }
+    } catch (e) {}
+  } else {
+    // Tab came back to foreground — ask SW for latest step count
+    // SW may have received steps counted in background (from another context)
+    checkDayReset();
+    requestSWStepCount();
+    // Short delay to let SW reply before we updateAll
+    setTimeout(() => updateAll(), 300);
+  }
 });
 
 document.body.addEventListener('touchmove',
